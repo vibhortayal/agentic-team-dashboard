@@ -1,0 +1,10 @@
+# Price sheet for agent runs. The owner confirms it; the Budget Analyst never guesses a price.
+# basis: pay-per-use (list prices) or subscription (track tokens; convert at list price to show what the work would cost)
+basis: pay-per-use
+checked: YYYY-MM-DD
+source: <the provider's official pricing page>
+currency: USD
+tiers:            # price per 1 million tokens
+  deep:     { model: <model id>, input: 0.00, output: 0.00, cached_input: 0.00 }
+  standard: { model: <model id>, input: 0.00, output: 0.00, cached_input: 0.00 }
+  fast:     { model: <model id>, input: 0.00, output: 0.00, cached_input: 0.00 }

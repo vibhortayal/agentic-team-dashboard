@@ -1,0 +1,118 @@
+# zones.yml: owner-controlled risk zones by path. Owned by the owner (it is itself a gate file).
+# Format: each zone is a list of glob patterns ("**" matches across folders). Matching ignores case.
+# The tamper guard reads it on every pull request (scripts/team_gates.py).
+
+# What this project requires. Delete a line only for the prototype profile (a gate change).
+#   checker: the verdict check fails if TEAM_CHECKER isn't set
+#   lint:    the quality gate fails if LINT_CMD is "none"
+require:
+  - checker
+  - lint
+
+# Gate files: CI, agent rules and role files, the autonomy stage (TEAM.md), lint and type
+# config, test-runner config, the command surface, this file. Any change needs the owner's
+# `gate-change-approved` label.
+gate:
+  - .github/**
+  - zones.yml
+  - CODEOWNERS
+  - .team/**
+  - TEAM.md
+  - AGENTS.md
+  - CLAUDE.md
+  - GEMINI.md
+  - DESIGN.md
+  - .claude/**
+  - "**/eslint.config.*"
+  - "**/.eslintrc*"
+  - "**/tsconfig*.json"
+  - "**/ruff.toml"
+  - "**/.ruff.toml"
+  - "**/mypy.ini"
+  - "**/.flake8"
+  - "**/pyrightconfig.json"
+  - "**/.golangci*"
+  - "**/biome.json*"
+  - "**/.semgrep*"
+  - "**/.jscpd*"
+  - "**/.eslintignore"
+  - "**/.prettierignore"
+  - quality/baseline.json
+  - Makefile
+  - justfile
+  - "**/conftest.py"
+  - "**/pytest.ini"
+  - "**/tox.ini"
+  - "**/setup.cfg"
+  - "**/jest.config.*"
+  - "**/vitest.config.*"
+  - "**/playwright.config.*"
+  - "**/karma.conf.*"
+  - "**/.mocharc*"
+  - "**/phpunit.xml*"
+
+# Existing tests: may not be modified or deleted without the owner's `tests-approved` label.
+# New test files are allowed on ticket and test-change branches only.
+# Also add any script the test command calls (for example scripts/test.sh) to the gate zone.
+tests:
+  - "**/tests/**"
+  - "**/test/**"
+  - "**/__tests__/**"
+  - "**/spec/**"
+  - "**/*.test.*"
+  - "**/*.spec.*"
+  - "**/*_test.*"
+  - "**/*_spec.*"
+  - "**/test_*.py"
+  - "**/*Test.*"
+  - "**/*Tests.*"
+
+# Dependency manifests and lockfiles: changes need the owner's `deps-approved` label
+# (after the dependency check passes). Manifests also hold test scripts, so a changed
+# "test" command is caught here too.
+deps:
+  - "**/package.json"
+  - "**/requirements*.txt"
+  - "**/pyproject.toml"
+  - "**/go.mod"
+  - "**/Cargo.toml"
+  - "**/Gemfile"
+  - "**/composer.json"
+  - package-lock.json
+  - pnpm-lock.yaml
+  - yarn.lock
+  - poetry.lock
+  - uv.lock
+  - go.sum
+  - Cargo.lock
+
+# Red zone: sign-in, payments, data deletion, migrations, secrets, infrastructure, prompts.
+# Never auto-merges; needs the owner's `red-zone-approved` label. These are starting
+# patterns: Ops and the owner edit them to the project's real folders at foundation.
+red:
+  - migrations/**
+  - "**/migrations/**"
+  - infra/**
+  - "**/auth/**"
+  - "**/payments/**"
+  - "**/billing/**"
+  - src/ai/prompts/**
+  - ".env*"
+  - "**/.env*"
+
+# Evidence: only the Verifier writes here, under verification/<issue>/ on that ticket's branch.
+# Two exceptions: the foundation rehearsal (verification/foundation/ on a gate/ branch) and
+# moving old checks into the test suite (verification/*/checks/ on verify/<n>-tests, with tests-approved).
+evidence:
+  - verification/**
+
+# Approved documents: what the owner already approved. Ticket branches may not change them;
+# they change through a docs/<topic> PR the owner merges. A ticket may add a new decision record.
+approved:
+  - docs/brief.md
+  - docs/specs/**
+  - docs/change-requests/**
+  - docs/decisions/**
+  - budget/**
+  - reports/**
+  - research/**
