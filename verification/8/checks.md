@@ -14,4 +14,4 @@ Written from the spec before reading app/ code. Scripts in `checks/` run headles
 | AC8 | listens on 127.0.0.1 only | /proc/net/tcp shows 127.0.0.1:port and no 0.0.0.0/:: socket on that port | demo |
 | AC9 | no label names, JSON or jargon on first screen | rendered HTML text from served page + api strings free of `needs-human`, `stage:`, `role:`, `human:`, `{"`, `PR`, `issue`, `label`, `repo`, `commit` | demo, plus browser screenshots (not a CI check) |
 | 8 | `/api/board` shape | keys and card keys present | demo |
-| 7 | one GitHub read per minute at most (cached); 50 items under 5 s | a refresh 12 s after a read must not read GitHub again; 50 items with 5 comments each timed | fake transport counts calls (in ac5 check); timing run by hand |
+| 7 | one GitHub read per minute at most (cached); 50 items under 5 s | a refresh 12 s and 59 s after a read must not read GitHub again; 50 items with 5 comments each timed | fake transport counts calls and the board's clock is stepped, not waited (in ac5 check); timing run by hand |

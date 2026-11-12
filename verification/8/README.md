@@ -1,38 +1,66 @@
-# Verification of #8 (progress board), round 1: BLOCK
+# Verification of #8 (progress board)
 
-Reviewed revision `d9822945bc18e84b72d5324cfaedae15a51acd94`, spec `docs/changes/8.md` at that revision. Base `721cc0f`. Checks were written from the spec (see `checks.md`) before reading `app/`; only `app/github_read.py` and `app/board.py` were read to learn how to feed hand-made data. The Verifier ran in the same account as the builder, so the check was not separate.
+Round 2: **PASS** on `bcef76dd128d59c67292560b7e6dce5ec96a09bf`. Spec `docs/changes/8.md` (unchanged since round 1), base `721cc0f`. Round 1 was BLOCK on `d9822945bc18e84b72d5324cfaedae15a51acd94`, evidence commit `62108315bff3f50a6e0ee184d834b122980a89e2`.
 
-## Commands and real output
+The Verifier ran in the same account as the builder (prototype profile, no checker identity), so the check was not separate and there is no checker approval. The owner should read this folder before merging.
 
-Baseline at base (throwaway worktree): `bash .github/team/run-checks.sh` gave `verifier checks: 0 run, ok`.
+Checks were written from the spec (see `checks.md`) before reading `app/`. Notes and the per-row results are in `verdict.json`.
 
-Builder's tests at head: `python3 -m unittest discover -s app/tests` gave `Ran 20 tests ... OK`.
+## Round 2 commands and real output
 
-Verifier checks at head: `bash .github/team/run-checks.sh` (1 min 16 s, python3 only, no network: the harness refuses every non-loopback connect and serves GitHub data from fixtures):
+Tamper check: `git diff 6210831 bcef76d -- verification/` is empty. The fix touched `app/board.py`, `app/model.py`, `app/static/board.js` and `app/tests/test_model.py` only.
+
+Round-1 repros first, at the head:
 
 ```
-  FAIL AC4 #21 shows 'Checked: passed' (got 'Checked: it works')
-  FAIL AC4 #23 shows 'Not checked yet' (got 'Check not finished')
-  FAIL AC4 only #21 shows 'Checked: passed' (got [])
-AC1-AC4: 35/38 passed
-  FAIL 7 one GitHub read per minute at most: refresh 12 s later read again (open+closed issue-list calls went 2 -> 4)
-AC5/read rate: 33/34 passed
+$ python3 verification/8/checks/ac1_to_ac4_board.py
+  ok   AC4 #21 shows 'Checked: passed' (got 'Checked: passed')
+  ok   AC4 only #21 shows 'Checked: passed' (got [21])
+AC1-AC4: 38/38 passed
+$ python3 verification/8/checks/ac7_ac8_demo_local.py
+AC7/AC8/data model: 15/15 passed
+$ python3 verification/8/checks/ac5_cant_read.py      # old version, real 74 s wait
+  ok   7 one GitHub read per minute at most: refresh 12 s later read again (open+closed issue-list calls went 2 -> 2)
+AC5/read rate: 34/34 passed
+real	1m14.973s
+```
+
+Then the AC5 check was changed to step the board's clock instead of sleeping (the harness adds an offset from a file to `time.time` and `time.monotonic` inside the board process; `Board.advance(s)` moves it). It now also checks a refresh at 59 s, the last second inside the minute. Probe against the round-1 revision in a throwaway worktree, to show it still catches finding 3:
+
+```
+  FAIL 7 one GitHub read per minute at most: refresh 12 s after a read (open+closed issue-list calls 2 -> 4)
+  FAIL 7 one GitHub read per minute at most: refresh 59 s after a read (open+closed issue-list calls 2 -> 6)
+AC5/read rate: 30/34 passed
+```
+
+Baseline at base `721cc0f` (throwaway worktree): `bash .github/team/run-checks.sh` gave `verifier checks: 0 run, ok`.
+
+Full run at the head, python3 only, no network (the harness refuses every non-loopback connect and serves GitHub data from fixtures):
+
+```
+$ time bash .github/team/run-checks.sh
+AC1-AC4: 38/38 passed
+check ok   verification/8/checks/ac1_to_ac4_board.py
+AC5/read rate: 35/35 passed
+check ok   verification/8/checks/ac5_cant_read.py
 AC6: 28/28 passed
-  FAIL data model: card has number,title,url,kind,stage,holder,update,check,needed (missing ['stage'])
-AC7/AC8/data model: 14/15 passed
-AC9: 57/57 passed
-verifier checks: 5 run, FAIL
+check ok   verification/8/checks/ac6_secrets.py
+AC7/AC8/data model: 15/15 passed
+check ok   verification/8/checks/ac7_ac8_demo_local.py
+AC9: 67/67 passed
+check ok   verification/8/checks/ac9_plain_words.py
+verifier checks: 5 run, ok
+real	0m1.805s
+$ python3 -m unittest discover -s app/tests
+Ran 22 tests in 0.004s
+OK
 ```
 
-50 items with 5 comments each, through the same harness: `50 items: 0.041 s; cards 50 calls 52`.
+Browser (by hand, not a CI check): the demo, a GitHub-unreachable board and an empty board, each with `NODE_PATH=$(npm root -g) node verification/8/shots.js <port> verification/8 <tag>` (Playwright Chromium, 1440x900 and 390x844, light and dark). No page errors, no horizontal scroll, first screen in plain words, the badge reads "Checked: passed". Screenshots: `demo-*.png`, `error-*.png`, `empty-*.png` (only the two desktop demo shots changed).
 
-Browser (run by hand, not a CI check): `NODE_PATH=$(npm root -g) node verification/8/shots.js <port> verification/8 <tag>` with Playwright Chromium at 1440x900 and 390x844, deviceScaleFactor 1, light and dark, for the demo, a GitHub-unreachable board and an empty board. No page errors, no horizontal scroll (scrollWidth equals width), first screen in plain words. Screenshots: `demo-*.png`, `error-*.png`, `empty-*.png`.
+## Round 1 findings, all fixed
 
-## Findings (block)
-
-1. AC4, `app/model.py:62`: latest verdict PASS shows "Checked: it works"; the clause says "Checked: passed".
-2. AC4, `app/model.py:64`: latest verdict INCONCLUSIVE shows "Check not finished"; the clause says anything but PASS or BLOCK shows "Not checked yet".
-3. Section 7, `app/board.py:49`: "Check now" (`/api/board?refresh=1`) reads GitHub again once the data is 10 s old; the spec allows one GitHub read per minute at most.
-4. Section 8, `app/model.py:183`: cards carry `column`, not `stage`; the spec lists `stage` among the card fields.
-
-Notes are in `verdict.json`.
+1. AC4: a PASS showed "Checked: it works"; now "Checked: passed".
+2. AC4: an INCONCLUSIVE verdict showed "Check not finished"; now "Not checked yet".
+3. Section 7: "Check now" read GitHub again after 10 s; now at most one read a minute.
+4. Section 8: cards had no `stage` field; now they do.

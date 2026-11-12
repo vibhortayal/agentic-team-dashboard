@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""AC5 (GitHub can't be read) and section 7 (one GitHub read per minute at most). Takes about 75 seconds."""
+"""AC5 (GitHub can't be read) and section 7 (one GitHub read per minute at most). The board's clock is stepped forward, so there is no real wait."""
 import json
 import re
 import sys
 import tempfile
-import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -49,15 +48,16 @@ with Board(["--repo", "acme/garden"], fixture=fx, env_extra={"GITHUB_TOKEN": "x"
     first = b.board()
     r.check(len(all_cards(first)) == 2 and not first.get("error"), "AC5 setup: first read shows 2 cards")
     reads0 = sum("/issues?" in u for u in b.api_calls())
-    # Section 7: a refresh inside the minute must not read GitHub again.
-    time.sleep(12)
-    b.board(refresh=True)
-    b.board(refresh=True)
-    reads1 = sum("/issues?" in u for u in b.api_calls())
-    r.check(reads1 == reads0, f"7 one GitHub read per minute at most: refresh 12 s later read again "
-                              f"(open+closed issue-list calls went {reads0} -> {reads1})")
+    # Section 7: a refresh inside the minute must not read GitHub again (12 s, and at the limit, 59 s).
+    for at, step in ((12, 12), (59, 47)):
+        b.advance(step)
+        b.board(refresh=True)
+        b.board()
+        reads1 = sum("/issues?" in u for u in b.api_calls())
+        r.check(reads1 == reads0, f"7 one GitHub read per minute at most: refresh {at} s after a read "
+                                  f"(open+closed issue-list calls {reads0} -> {reads1})")
     write_fixture(fx, items, {}, fail="network")
-    time.sleep(62)
+    b.advance(3)  # 62 s after the good read: the cache is due again
     later = b.board()
     plain_error(later, "failure after a good read")
 r.done()

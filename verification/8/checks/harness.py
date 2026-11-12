@@ -2,8 +2,10 @@
 
 The board runs as a real process. A small runner (this file, run as a script) replaces only the
 network: urllib's urlopen serves a fixture file (re-read on every call, so a check can change it
-mid-run), and any socket connect to a non-loopback address is refused and logged. Then app/board.py
-runs as __main__ with the given arguments. Nothing reaches the internet.
+mid-run), and any socket connect to a non-loopback address is refused and logged. It also moves the
+board's clock: time.time and time.monotonic add an offset read from a file, so a check can step past
+the one-minute cache without waiting (Board.advance). Then app/board.py runs as __main__ with the
+given arguments. Nothing reaches the internet.
 """
 from __future__ import annotations
 
@@ -75,6 +77,8 @@ class Board:
         self.tmp = Path(tempfile.mkdtemp(prefix="v8-"))
         self.log = self.tmp / "net.log"
         self.calls = self.tmp / "calls.log"
+        self.clock = self.tmp / "clock"
+        self.clock.write_text("0")
         self.port = free_port()
         bindir = self.tmp / "bin"
         bindir.mkdir()
@@ -87,7 +91,7 @@ class Board:
         env["PATH"] = f"{bindir}:/usr/bin:/bin"
         env["PYTHONDONTWRITEBYTECODE"] = "1"
         env.update(env_extra or {})
-        cmd = [sys.executable, __file__, str(fixture or "-"), str(self.log), str(self.calls), "--",
+        cmd = [sys.executable, __file__, str(fixture or "-"), str(self.log), str(self.calls), str(self.clock), "--",
                *args, "--port", str(self.port), "--no-open"]
         self.out = open(self.tmp / "stdout.log", "w")
         self.proc = subprocess.Popen(cmd, cwd=self.tmp, env=env, stdout=self.out, stderr=subprocess.STDOUT)
@@ -112,6 +116,10 @@ class Board:
 
     def board(self, refresh=False):
         return json.loads(self.get("/api/board" + ("?refresh=1" if refresh else "")))
+
+    def advance(self, seconds):
+        """Move the board's clock forward (it only ever goes forward)."""
+        self.clock.write_text(str(float(self.clock.read_text()) + seconds))
 
     def net_attempts(self):
         return self.log.read_text().splitlines() if self.log.exists() else []
@@ -187,7 +195,7 @@ class _Resp(io.BytesIO):
 
 
 def _runner():
-    fixture, netlog, calllog = sys.argv[1], sys.argv[2], sys.argv[3]
+    fixture, netlog, calllog, clockfile = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
     args = sys.argv[sys.argv.index("--") + 1:]
 
     real_connect = socket.socket.connect
@@ -201,6 +209,18 @@ def _runner():
         return real_connect(self, address)
 
     socket.socket.connect = guarded_connect
+
+    import time as _time
+    real_time, real_mono = _time.time, _time.monotonic
+
+    def _offset():
+        try:
+            return float(Path(clockfile).read_text())
+        except (OSError, ValueError):
+            return 0.0
+
+    _time.time = lambda: real_time() + _offset()
+    _time.monotonic = lambda: real_mono() + _offset()
 
     def fake_urlopen(req, *a, **k):
         url = req.full_url if hasattr(req, "full_url") else str(req)
