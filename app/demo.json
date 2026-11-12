@@ -1,0 +1,185 @@
+{
+ "repo": "sample/recipe-box",
+ "items": [
+  {
+   "number": 3,
+   "title": "Plan for the sign-up page",
+   "labels": [
+    {
+     "name": "stage:spec"
+    },
+    {
+     "name": "role:product-manager"
+    },
+    {
+     "name": "needs-human"
+    },
+    {
+     "name": "human:approve-spec"
+    }
+   ],
+   "state": "open",
+   "html_url": "https://github.com/sample/recipe-box/issues/3",
+   "updated_at": "2026-11-12T15:10:00Z",
+   "comments": 1
+  },
+  {
+   "number": 5,
+   "title": "Sign-up page",
+   "labels": [
+    {
+     "name": "stage:review"
+    },
+    {
+     "name": "role:product-manager"
+    },
+    {
+     "name": "needs-human"
+    },
+    {
+     "name": "human:merge"
+    }
+   ],
+   "state": "open",
+   "html_url": "https://github.com/sample/recipe-box/pull/5",
+   "updated_at": "2026-11-12T16:40:00Z",
+   "comments": 1,
+   "pull_request": {
+    "url": ""
+   }
+  },
+  {
+   "number": 6,
+   "title": "Recipe list page",
+   "labels": [
+    {
+     "name": "stage:building"
+    },
+    {
+     "name": "role:implementer"
+    }
+   ],
+   "state": "open",
+   "html_url": "https://github.com/sample/recipe-box/issues/6",
+   "updated_at": "2026-11-12T14:05:00Z",
+   "comments": 1
+  },
+  {
+   "number": 7,
+   "title": "Save favourite recipes",
+   "labels": [
+    {
+     "name": "stage:verifying"
+    },
+    {
+     "name": "role:verifier"
+    }
+   ],
+   "state": "open",
+   "html_url": "https://github.com/sample/recipe-box/issues/7",
+   "updated_at": "2026-11-12T16:55:00Z",
+   "comments": 1
+  },
+  {
+   "number": 9,
+   "title": "Pick where the app will live online",
+   "labels": [
+    {
+     "name": "stage:research"
+    },
+    {
+     "name": "role:researcher"
+    }
+   ],
+   "state": "open",
+   "html_url": "https://github.com/sample/recipe-box/issues/9",
+   "updated_at": "2026-11-12T11:30:00Z",
+   "comments": 1
+  },
+  {
+   "number": 10,
+   "title": "Fix a spelling mistake on the home page",
+   "labels": [
+    {
+     "name": "stage:ready"
+    },
+    {
+     "name": "role:implementer"
+    }
+   ],
+   "state": "open",
+   "html_url": "https://github.com/sample/recipe-box/issues/10",
+   "updated_at": "2026-11-12T17:05:00Z",
+   "comments": 1
+  },
+  {
+   "number": 2,
+   "title": "Home page",
+   "labels": [
+    {
+     "name": "stage:done"
+    }
+   ],
+   "state": "closed",
+   "html_url": "https://github.com/sample/recipe-box/issues/2",
+   "updated_at": "2026-11-11T18:00:00Z",
+   "comments": 1
+  }
+ ],
+ "comments": {
+  "3": [
+   {
+    "html_url": "https://github.com/sample/recipe-box/issues/3#issuecomment-301",
+    "created_at": "2026-11-12T15:10:00Z",
+    "body": "**Priya (product-manager) \u2192 owner \u00b7 question**\n\nShould people sign up with email, or with Google too? I suggest email only for now.\n\n<!-- team-event {\"from\": \"product-manager\", \"to\": \"owner\", \"kind\": \"question\", \"human\": \"human:approve-spec\"} -->"
+   }
+  ],
+  "5": [
+   {
+    "html_url": "https://github.com/sample/recipe-box/issues/5#issuecomment-501",
+    "created_at": "2026-11-12T16:20:00Z",
+    "body": "**Vera (verifier) \u2192 Priya (product-manager) \u00b7 verdict \u00b7 PASS**\n\n12 checks ran, all passed.\n\n<!-- team-event {\"from\": \"verifier\", \"to\": \"product-manager\", \"kind\": \"verdict\", \"verdict\": \"PASS\", \"rev\": \"a1b2c3d\", \"round\": 1} -->"
+   },
+   {
+    "html_url": "https://github.com/sample/recipe-box/issues/5#issuecomment-502",
+    "created_at": "2026-11-12T16:40:00Z",
+    "body": "**Priya (product-manager) \u2192 owner \u00b7 handoff**\n\nReady for you to try. Vera ran 12 checks, all passed.\n\n<!-- team-event {\"from\": \"product-manager\", \"to\": \"owner\", \"kind\": \"handoff\", \"human\": \"human:merge\"} -->"
+   }
+  ],
+  "6": [
+   {
+    "html_url": "https://github.com/sample/recipe-box/issues/6#issuecomment-601",
+    "created_at": "2026-11-12T13:00:00Z",
+    "body": "**Vera (verifier) \u2192 Ian (implementer) \u00b7 verdict \u00b7 BLOCK**\n\nThe list breaks when a recipe has no photo.\n\n<!-- team-event {\"from\": \"verifier\", \"to\": \"implementer\", \"kind\": \"verdict\", \"verdict\": \"BLOCK\", \"rev\": \"d4e5f6a\", \"round\": 1} -->"
+   }
+  ],
+  "7": [
+   {
+    "html_url": "https://github.com/sample/recipe-box/issues/7#issuecomment-701",
+    "created_at": "2026-11-12T16:55:00Z",
+    "body": "**Ian (implementer) \u2192 Vera (verifier) \u00b7 handoff**\n\nBuilt and self-checked. Over to Vera.\n\n<!-- team-event {\"from\": \"implementer\", \"to\": \"verifier\", \"kind\": \"handoff\"} -->"
+   }
+  ],
+  "9": [
+   {
+    "html_url": "https://github.com/sample/recipe-box/issues/9#issuecomment-901",
+    "created_at": "2026-11-12T11:30:00Z",
+    "body": "**Ella (engagement-lead) \u2192 Rohan (researcher) \u00b7 handoff**\n\nPlease compare free hosting options for a small app.\n\n<!-- team-event {\"from\": \"engagement-lead\", \"to\": \"researcher\", \"kind\": \"handoff\"} -->"
+   }
+  ],
+  "10": [
+   {
+    "html_url": "https://github.com/sample/recipe-box/issues/10#issuecomment-1001",
+    "created_at": "2026-11-12T17:05:00Z",
+    "body": "**Ella (engagement-lead) \u00b7 note**\n\nA one-word spelling fix, so I didn't stop you for it. Ian fixes it next.\n\n<!-- team-event {\"from\": \"engagement-lead\", \"to\": \"product-manager\", \"kind\": \"note\"} -->"
+   }
+  ],
+  "2": [
+   {
+    "html_url": "https://github.com/sample/recipe-box/issues/2#issuecomment-201",
+    "created_at": "2026-11-11T17:00:00Z",
+    "body": "**Vera (verifier) \u2192 Priya (product-manager) \u00b7 verdict \u00b7 PASS**\n\n8 checks ran, all passed.\n\n<!-- team-event {\"from\": \"verifier\", \"to\": \"product-manager\", \"kind\": \"verdict\", \"verdict\": \"PASS\", \"rev\": \"0f1e2d3\", \"round\": 1} -->"
+   }
+  ]
+ }
+}
