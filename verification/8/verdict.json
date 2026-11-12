@@ -1,0 +1,26 @@
+{"issue": 8, "rev": "d9822945bc18e84b72d5324cfaedae15a51acd94", "verdict": "BLOCK", "round": 1,
+ "checks": [
+  {"id": "AC1", "spec": "docs/changes/8.md#5", "command": "python3 verification/8/checks/ac1_to_ac4_board.py", "result": "pass"},
+  {"id": "AC2", "spec": "docs/changes/8.md#5", "command": "python3 verification/8/checks/ac1_to_ac4_board.py", "result": "pass"},
+  {"id": "AC3", "spec": "docs/changes/8.md#5", "command": "python3 verification/8/checks/ac1_to_ac4_board.py", "result": "pass"},
+  {"id": "AC4", "spec": "docs/changes/8.md#5", "command": "python3 verification/8/checks/ac1_to_ac4_board.py", "result": "fail"},
+  {"id": "AC5", "spec": "docs/changes/8.md#5", "command": "python3 verification/8/checks/ac5_cant_read.py", "result": "pass"},
+  {"id": "AC6", "spec": "docs/changes/8.md#5", "command": "python3 verification/8/checks/ac6_secrets.py", "result": "pass"},
+  {"id": "AC7", "spec": "docs/changes/8.md#5", "command": "python3 verification/8/checks/ac7_ac8_demo_local.py", "result": "pass"},
+  {"id": "AC8", "spec": "docs/changes/8.md#5", "command": "python3 verification/8/checks/ac7_ac8_demo_local.py", "result": "pass"},
+  {"id": "AC9", "spec": "docs/changes/8.md#5", "command": "python3 verification/8/checks/ac9_plain_words.py + Playwright screenshots in verification/8/*.png", "result": "pass"},
+  {"id": "NFR-read-rate", "spec": "docs/changes/8.md#7", "command": "python3 verification/8/checks/ac5_cant_read.py", "result": "fail"},
+  {"id": "NFR-50-items", "spec": "docs/changes/8.md#7", "command": "harness run by hand: 50 items x 5 comments", "result": "pass"},
+  {"id": "DATA-MODEL", "spec": "docs/changes/8.md#8", "command": "python3 verification/8/checks/ac7_ac8_demo_local.py", "result": "fail"},
+  {"id": "BUILDER-TESTS", "spec": "app/tests", "command": "python3 -m unittest discover -s app/tests", "result": "pass"}
+ ],
+ "notes": [
+  "Check was not separate: the Verifier ran in the same account and session as the builder (prototype profile, no TEAM_CHECKER).",
+  "AC5: every error message is two short sentences ('The board can't reach GitHub. Check your internet connection.'); the clause says one plain sentence. Plain and jargon-free, so a note, not a finding.",
+  "AC3: the card shows the latest team comment's header rewritten in plain words ('Rohan posted a report.') rather than the raw header line; accepted because AC9 forbids label names on the first screen.",
+  "AC2: reason is the first line after the header; the clause's 'her first line' is ambiguous and the check accepts this reading.",
+  "AC6: 'if masking fails, the whole line is hidden' was not tested black-box (no way to force the mask to fail from outside).",
+  "Untested: a project with more than 100 open items or 100 comments per item (no paging); the page's behaviour when the board server itself stops.",
+  "In the error state the header still says 'Last checked just now' (the time of the failed try); no stale cards are shown."
+ ],
+ "evidence": "verification/8/"}
