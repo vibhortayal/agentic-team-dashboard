@@ -1,0 +1,28 @@
+{
+  "name": "team-dashboard",
+  "private": true,
+  "version": "0.1.0",
+  "description": "The progress board: a page on your own computer that shows where your project stands.",
+  "type": "module",
+  "engines": { "node": ">=22.18" },
+  "scripts": {
+    "build": "vite build",
+    "start": "vite build && node server/main.ts",
+    "demo": "vite build && node server/main.ts --demo",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.2.1",
+    "typescript": "7.0.2",
+    "vite": "8.3.6",
+    "vitest": "5.1.0"
+  }
+}

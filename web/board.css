@@ -86,3 +86,7 @@ ul { list-style: none; padding: 0; margin: 0; }
 .nocards { color: var(--muted); font-size: 14px; margin: 4px 2px; }
 .foot { max-width: 1280px; margin: 0 auto; padding: 8px clamp(16px, 4vw, 48px) 32px; color: var(--muted); font-size: 14px; }
 @media (prefers-reduced-motion: no-preference) { .card, .need { transition: transform .15s ease; } .card:hover { transform: translateY(-1px); } }
+.face.ella { background: #b5552b; } .face.priya { background: #7a4fb5; } .face.ian { background: #2d6fb5; }
+.face.vera { background: #1f7a4d; } .face.rohan { background: #8a6d1f; } .face.quinn { background: #9b3b5a; }
+.face.arjun { background: #3b6e7a; } .face.max { background: #5a5fb0; } .face.bea { background: #a0522d; }
+.face.otto { background: #4f6b3a; }

@@ -6,8 +6,8 @@ The front door to the agent team, built by the team itself. How the team works h
 
 A page on your own computer that shows what is waiting on you and how each piece of work is going. It only reads your project on GitHub; it changes nothing.
 
-Ask your coding assistant: "Start the progress board for this project." It runs `python3 app/board.py` from the project folder, and the board opens in your browser at http://localhost:4321. To see it with sample data, it runs `python3 app/board.py --demo`.
+Ask your coding assistant: "Start the progress board for this project." It runs `npm install` once, then `npm start` from the project folder, and the board opens in your browser at http://localhost:4321. With sample data instead: `npm run demo`.
 
-It needs Python 3.9 or newer and nothing else. To read a private project it uses your GitHub sign-in from the GitHub command-line tool, or a `GITHUB_TOKEN`.
+It needs Node 22.18 or newer. To read a private project it uses your GitHub sign-in from the GitHub command-line tool, or a `GITHUB_TOKEN`.
 
-Tests: `python3 -m unittest discover -s app/tests`
+Checks: `npm test` and `npm run typecheck`. Why TypeScript: `docs/decisions/0001-stack.md`.
