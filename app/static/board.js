@@ -100,11 +100,11 @@ function draw(b) {
   document.getElementById("columns").replaceChildren(...(b.error ? [] : b.columns.map(column)));
 }
 
-async function load(refresh = false) {
+async function load() {
   const btn = document.getElementById("refresh");
   btn.disabled = true; btn.textContent = "Checking…";
   try {
-    const r = await fetch("/api/board" + (refresh ? "?refresh=1" : ""), { cache: "no-store" });
+    const r = await fetch("/api/board", { cache: "no-store" });
     if (!r.ok) throw new Error(String(r.status));
     draw(await r.json());
   } catch {
@@ -115,8 +115,8 @@ async function load(refresh = false) {
   }
 }
 
-document.getElementById("refresh").addEventListener("click", () => load(true));
-setInterval(() => load(false), 60_000);
+document.getElementById("refresh").addEventListener("click", () => load());
+setInterval(() => load(), 60_000);
 setInterval(() => {
   const u = document.getElementById("updated");
   if (u.dataset.at) u.textContent = `Last checked ${ago(u.dataset.at)}`;

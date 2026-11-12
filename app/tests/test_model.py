@@ -81,7 +81,7 @@ class ModelTest(unittest.TestCase):
     def test_pass_shows_checked(self):  # AC4
         b = board([item(7, ["stage:done"], state="closed")],
                   {7: [comment(7, 1, "2026-11-12T09:00:00Z", {"from": "verifier", "to": "product-manager", "kind": "verdict", "verdict": "PASS"})]})
-        self.assertEqual(col(b, "done")[0]["check_words"], "Checked: it works")
+        self.assertEqual(col(b, "done")[0]["check_words"], "Checked: passed")
 
     def test_later_block_overrides_earlier_pass(self):  # AC4
         b = board([item(8, ["stage:building"])],
@@ -94,6 +94,15 @@ class ModelTest(unittest.TestCase):
         self.assertEqual(b["error"], "The board can't reach GitHub.")
         self.assertEqual(b["repo_url"], "https://github.com/o/r")
         self.assertEqual(sum(len(c["cards"]) for c in b["columns"]), 0)
+
+    def test_inconclusive_is_not_checked(self):  # AC4
+        b = board([item(11, ["stage:verifying"])],
+                  {11: [comment(11, 1, "2026-11-12T09:00:00Z", {"from": "verifier", "kind": "verdict", "verdict": "INCONCLUSIVE"})]})
+        self.assertEqual(col(b, "checking")[0]["check_words"], "Not checked yet")
+
+    def test_card_has_stage(self):  # spec section 8
+        b = board([item(12, ["stage:building"])], {})
+        self.assertEqual(col(b, "building")[0]["stage"], "building")
 
     def test_broken_event_json_is_ignored(self):
         self.assertIsNone(parse_event("<!-- team-event {not json} -->"))

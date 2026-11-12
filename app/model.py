@@ -59,9 +59,8 @@ NEEDED = {
 NEEDED_DEFAULT = "The team needs you."
 
 CHECK_WORDS = {
-    "PASS": ("passed", "Checked: it works"),
+    "PASS": ("passed", "Checked: passed"),
     "BLOCK": ("fixes", "Checked: needs fixes"),
-    "INCONCLUSIVE": ("unclear", "Check not finished"),
 }
 NOT_CHECKED = ("none", "Not checked yet")
 
@@ -152,8 +151,8 @@ def build_card(item: dict[str, Any], comments: list[dict[str, Any]]) -> dict[str
 
     check = NOT_CHECKED
     for _c, ev in events:
-        if ev.get("kind") == "verdict" and ev.get("verdict") in CHECK_WORDS:
-            check = CHECK_WORDS[ev["verdict"]]
+        if ev.get("kind") == "verdict":  # the latest verdict wins, whatever it says
+            check = CHECK_WORDS.get(str(ev.get("verdict")), NOT_CHECKED)
 
     update, update_at, update_url = "No team updates yet.", item.get("updated_at"), item.get("html_url")
     if events:
@@ -180,6 +179,7 @@ def build_card(item: dict[str, Any], comments: list[dict[str, Any]]) -> dict[str
         "title": item.get("title") or "",
         "url": item.get("html_url"),
         "kind": "change" if "pull_request" in item else "task",
+        "stage": stage,
         "column": column,
         "holder": person(role) if column != "done" else "",
         "update": update,

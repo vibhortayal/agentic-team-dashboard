@@ -43,10 +43,9 @@ class Source:
         self._lock = threading.Lock()
         self._at, self._board = 0.0, None
 
-    def board(self, refresh: bool = False) -> dict:
+    def board(self) -> dict:
         with self._lock:
-            age = time.time() - self._at
-            if self._board is None or (refresh and age > 10) or age > CACHE_SECONDS:
+            if self._board is None or time.time() - self._at > CACHE_SECONDS:
                 self._board, self._at = self._read(), time.time()
             return self._board
 
@@ -85,9 +84,9 @@ def make_handler(source: Source, port: int):
             # Only answer pages opened on this computer by name, so other websites can't read it.
             if self.headers.get("Host") not in allowed_hosts:
                 return self._send(403, b"Forbidden", "text/plain")
-            path, _, query = self.path.partition("?")
+            path = self.path.partition("?")[0]
             if path == "/api/board":
-                board = source.board(refresh="refresh=1" in query)
+                board = source.board()
                 return self._send(200, json.dumps(board).encode("utf-8"), "application/json")
             if path in STATIC:
                 name, ctype = STATIC[path]
