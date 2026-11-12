@@ -1,6 +1,6 @@
 # TEAM.md
 
-This project is staffed from agentic-team (https://github.com/vibhortayal/agentic-team), installed in `.team/`.
+This project is staffed from agentic-team (https://github.com/vibhortayal/agentic-team-oss), installed in `.team/`.
 
 - **Profile:** prototype (the owner's choice, 2026-11-10; Ella confirms it at intake) (see `.team/playbooks/engagement.md`, Project profiles). Changes only on the owner's message.
 - Team version: `13e79e1`. Roles and playbooks at that version win over anything here about how agents work.
