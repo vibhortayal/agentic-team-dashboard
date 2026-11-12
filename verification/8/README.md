@@ -1,66 +1,73 @@
 # Verification of #8 (progress board)
 
-Round 2: **PASS** on `bcef76dd128d59c67292560b7e6dce5ec96a09bf`. Spec `docs/changes/8.md` (unchanged since round 1), base `721cc0f`. Round 1 was BLOCK on `d9822945bc18e84b72d5324cfaedae15a51acd94`, evidence commit `62108315bff3f50a6e0ee184d834b122980a89e2`.
+Round 3: **PASS** on `01c6e4c91dcc12ab7806622bd6d3b515e7367926` (the TypeScript rebuild). Spec `docs/changes/8.md` v2 at that commit, base `721cc0f`. Round 2 was PASS on the Python board `bcef76d` (evidence `3575899`); round 1 was BLOCK on `d982294` (evidence `6210831`).
 
 The Verifier ran in the same account as the builder (prototype profile, no checker identity), so the check was not separate and there is no checker approval. The owner should read this folder before merging.
 
-Checks were written from the spec (see `checks.md`) before reading `app/`. Notes and the per-row results are in `verdict.json`.
+Rows and how each is checked: `checks.md`. Per-row results and notes: `verdict.json`.
 
-## Round 2 commands and real output
+## Round 3 commands and real output
 
-Tamper check: `git diff 6210831 bcef76d -- verification/` is empty. The fix touched `app/board.py`, `app/model.py`, `app/static/board.js` and `app/tests/test_model.py` only.
+Tamper check: `git diff 3575899 01c6e4c -- verification/` is empty. The Python checks and `shots.js` were removed in this round (they ran the deleted `app/board.py`) and replaced with Node checks.
 
-Round-1 repros first, at the head:
-
-```
-$ python3 verification/8/checks/ac1_to_ac4_board.py
-  ok   AC4 #21 shows 'Checked: passed' (got 'Checked: passed')
-  ok   AC4 only #21 shows 'Checked: passed' (got [21])
-AC1-AC4: 38/38 passed
-$ python3 verification/8/checks/ac7_ac8_demo_local.py
-AC7/AC8/data model: 15/15 passed
-$ python3 verification/8/checks/ac5_cant_read.py      # old version, real 74 s wait
-  ok   7 one GitHub read per minute at most: refresh 12 s later read again (open+closed issue-list calls went 2 -> 2)
-AC5/read rate: 34/34 passed
-real	1m14.973s
-```
-
-Then the AC5 check was changed to step the board's clock instead of sleeping (the harness adds an offset from a file to `time.time` and `time.monotonic` inside the board process; `Board.advance(s)` moves it). It now also checks a refresh at 59 s, the last second inside the minute. Probe against the round-1 revision in a throwaway worktree, to show it still catches finding 3:
+Setup, as CI will run it (`SETUP_CMD`), on Node 22.23.4:
 
 ```
-  FAIL 7 one GitHub read per minute at most: refresh 12 s after a read (open+closed issue-list calls 2 -> 4)
-  FAIL 7 one GitHub read per minute at most: refresh 59 s after a read (open+closed issue-list calls 2 -> 6)
-AC5/read rate: 30/34 passed
+$ npm ci && npm run build
+found 0 vulnerabilities
+dist/index.html                   0.37 kB │ gzip:  0.26 kB
+dist/assets/index-CnUu6Ni-.css    4.84 kB │ gzip:  1.65 kB
+dist/assets/index-BKRfvSxW.js   224.81 kB │ gzip: 70.49 kB
+✓ built in 104ms
 ```
 
 Baseline at base `721cc0f` (throwaway worktree): `bash .github/team/run-checks.sh` gave `verifier checks: 0 run, ok`.
 
-Full run at the head, python3 only, no network (the harness refuses every non-loopback connect and serves GitHub data from fixtures):
+Full run at the head (the guard refuses every connection off this computer; GitHub is a local fake):
 
 ```
 $ time bash .github/team/run-checks.sh
-AC1-AC4: 38/38 passed
-check ok   verification/8/checks/ac1_to_ac4_board.py
-AC5/read rate: 35/35 passed
-check ok   verification/8/checks/ac5_cant_read.py
-AC6: 28/28 passed
-check ok   verification/8/checks/ac6_secrets.py
-AC7/AC8/data model: 15/15 passed
-check ok   verification/8/checks/ac7_ac8_demo_local.py
-AC9: 67/67 passed
-check ok   verification/8/checks/ac9_plain_words.py
+AC1-AC4: 39/39 passed
+check ok   verification/8/checks/ac1_ac4_board.mjs
+AC5/read rate: 37/37 passed
+check ok   verification/8/checks/ac5_read_rate.mjs
+AC6: 30/30 passed
+check ok   verification/8/checks/ac6_secrets.mjs
+AC7/AC8/data model: 17/17 passed
+check ok   verification/8/checks/ac7_ac8_demo_local.mjs
+AC9: 43/43 passed
+check ok   verification/8/checks/ac9_plain_words.mjs
 verifier checks: 5 run, ok
-real	0m1.805s
-$ python3 -m unittest discover -s app/tests
-Ran 22 tests in 0.004s
-OK
+real	0m2.720s
 ```
 
-Browser (by hand, not a CI check): the demo, a GitHub-unreachable board and an empty board, each with `NODE_PATH=$(npm root -g) node verification/8/shots.js <port> verification/8 <tag>` (Playwright Chromium, 1440x900 and 390x844, light and dark). No page errors, no horizontal scroll, first screen in plain words, the badge reads "Checked: passed". Screenshots: `demo-*.png`, `error-*.png`, `empty-*.png` (only the two desktop demo shots changed).
+Selected lines:
 
-## Round 1 findings, all fixed
+```
+  ok   7 one GitHub read per minute at most: refresh 59 s after a read (issue-list calls 2 -> 2)
+  ok   7 a refresh after the minute reads GitHub again (issue-list calls 2 -> 3)
+  ok   7 50 open items load in under 5 s (50 cards in 0.074 s)
+  ok   AC8 every listening socket on port 36255 is 127.0.0.1 (["/proc/net/tcp:0100007F"])
+  ok   guard self-test: a real-mode read is caught (["fetch https://api.github.com/repos/acme/garden/issues?state=open&per_page=100"])
+  ok   AC7 `npm run demo` serves the sample board (7 cards)
+```
 
-1. AC4: a PASS showed "Checked: it works"; now "Checked: passed".
-2. AC4: an INCONCLUSIVE verdict showed "Check not finished"; now "Not checked yet".
-3. Section 7: "Check now" read GitHub again after 10 s; now at most one read a minute.
-4. Section 8: cards had no `stage` field; now they do.
+The read at 62 s shows the clock step reaches the board, so the 12 s and 59 s results mean something; the guard self-test shows "no network attempt in demo mode" means something.
+
+Old-Node probe (Node 20 faked with a preload): each check stops at once with
+
+```
+FAIL these checks need Node 22.18 or newer (the board runs server/main.ts directly); this runner has Node 20.11.1. Set up Node 22.18+ before running them.
+exit 1
+```
+
+Builder's own checks:
+
+```
+$ npm run typecheck     # tsc --noEmit, clean
+$ npm test
+ Test Files  3 passed (3)
+      Tests  44 passed (44)
+```
+
+Browser (by hand, not a CI check): `NODE_PATH=$(npm root -g) node verification/8/shots.mjs` starts the demo, a board whose GitHub drops the connection, and a board with no open items, and takes Playwright Chromium screenshots at 1440x900 and 390x844 (deviceScaleFactor 1), light and dark: `demo-*.png`, `error-*.png`, `empty-*.png`. All 12: no page errors, no horizontal scroll (scrollWidth equals the viewport), no jargon in the visible first-screen text. The error page says "The board can't reach GitHub. Check your internet connection." with "Look at it on GitHub instead" linking https://github.com/acme/garden and no cards.
