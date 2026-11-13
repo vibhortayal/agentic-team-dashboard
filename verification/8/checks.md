@@ -1,0 +1,21 @@
+# Checks for #8 (progress board), derived from docs/changes/8.md v2 at 01c6e4c
+
+Written from the spec before reading `server/` or `web/` code (only the command line, `BOARD_GITHUB_API` and the token lookup were read, to know how to start the board). Round 3 rewrote the Python checks for the TypeScript board; the rows and scenarios are the same as rounds 1-2.
+
+How they run: each `checks/*.mjs` is a Node script. It starts the real board (`node server/main.ts --repo acme/garden --port <free> --no-open`, or `--demo`) with `checks/guard.mjs` preloaded, which refuses and logs any connection off this computer and lets the check step the board's clock (`Date.now`, `performance.now`). GitHub is a fake on 127.0.0.1 inside the check, reached through `BOARD_GITHUB_API`. `checks/lib.mjs` stops with a plain message if Node is older than 22.18 or `dist/` is missing. CI needs `npm ci && npm run build` first.
+
+| Row | Clause | Check | Script |
+|---|---|---|---|
+| AC1 | needs-human item under "Waiting for you", plain sentence per `human:` label, link to latest asking comment, else the item | needed[] holds exactly the open needs-human items (issue and PR); three labels give three plain sentences with no label text; link is the latest comment with `"to":"owner"` or `human`, else the item; a closed item is not shown | `ac1_ac4_board.mjs` |
+| AC2 | latest Ella `note` on an open item, greyed, first line as reason | handled[] holds only the open item with an Ella note; reason is the latest note's first line; not a closed item, an Ella handoff or another role's note | `ac1_ac4_board.mjs` |
+| AC3 | grouped by stage in everyday words; holder persona; header line of latest team comment | six column titles in order; each card in the column of its stage (intake/research/spec, ready, building, verifying, review, done); holder names the persona; update is the latest team comment's header, not a human comment | `ac1_ac4_board.mjs` |
+| AC4 | "Checked: passed" only on a latest PASS; BLOCK -> needs fixes; else "Not checked yet"; done without PASS -> not checked | PASS then BLOCK -> needs fixes; BLOCK then PASS -> passed; PASS then INCONCLUSIVE -> not checked; done with no verdict -> not checked; only one card passed | `ac1_ac4_board.mjs` |
+| AC5 | can't read GitHub -> one plain sentence, repo link, no stale data as current | dropped connection, nothing listening, 401, rate limit, 404, 500, no sign-in: error sentence with no codes, repo given, no cards; after a good read then a failure past the minute, old cards are gone | `ac5_read_rate.mjs` (+ error screenshots) |
+| AC6 | one mask; key shapes -> `[hidden: kind]`; NAME_KEY/TOKEN/SECRET/PASSWORD values hidden; planted file of fake keys all masked | 11 key shapes and 4 named values planted in titles, headers, asking comments and notes, plus a key inside a link: none sent, titles show `[hidden: ...]` | `ac6_secrets.mjs` |
+| AC7 | `npm run demo` with no network, no sign-in | demo under the guard with failing `gh`/`git` stubs and no token: cards, something waiting, no network attempt, no sign-in tool called; `npm run demo` itself serves the sample board; guard self-test shows a real read is caught | `ac7_ac8_demo_local.mjs` |
+| AC8 | listens on 127.0.0.1 only | `/proc/net/tcp*` LISTEN sockets on the port are all 127.0.0.1; the port refuses on every non-loopback address | `ac7_ac8_demo_local.mjs` |
+| AC9 | no label names, JSON or jargon on the first screen | page shell and every board string the page shows (titles excepted) free of label names, role names, PR/issue/label/repo/commit/merge/verdict words, PASS/BLOCK, braces; rendered first screen scanned in Chromium and judged from screenshots | `ac9_plain_words.mjs`, `shots.mjs` (by hand) |
+| §7 | one GitHub read per minute at most; 50 open items under 5 s | refresh at 12 s and at 59 s after a read makes no new list call; at 62 s it does; 50 items x 5 comments timed | `ac5_read_rate.mjs` |
+| §8 | `/api/board` shape and card fields | top-level keys; column key/title/cards; every card has number, title, url, kind, stage, holder, update, check, needed | `ac7_ac8_demo_local.mjs` |
+
+Spec statements with no row: §3 "one page on http://localhost:4321" (port 4321 is the default; checks pass `--port` to run safely), §7 "one `npm install`" (covered by `npm ci` in setup), §10 screen layout (judged from screenshots).

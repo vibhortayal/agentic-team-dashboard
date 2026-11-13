@@ -1,0 +1,30 @@
+{"issue": 8, "rev": "01c6e4c91dcc12ab7806622bd6d3b515e7367926", "verdict": "PASS", "round": 3,
+ "checks": [
+  {"id": "AC1", "spec": "docs/changes/8.md#5", "command": "node verification/8/checks/ac1_ac4_board.mjs", "result": "pass"},
+  {"id": "AC2", "spec": "docs/changes/8.md#5", "command": "node verification/8/checks/ac1_ac4_board.mjs", "result": "pass"},
+  {"id": "AC3", "spec": "docs/changes/8.md#5", "command": "node verification/8/checks/ac1_ac4_board.mjs", "result": "pass"},
+  {"id": "AC4", "spec": "docs/changes/8.md#5", "command": "node verification/8/checks/ac1_ac4_board.mjs", "result": "pass"},
+  {"id": "AC5", "spec": "docs/changes/8.md#5", "command": "node verification/8/checks/ac5_read_rate.mjs + error-*.png", "result": "pass"},
+  {"id": "AC6", "spec": "docs/changes/8.md#5", "command": "node verification/8/checks/ac6_secrets.mjs", "result": "pass"},
+  {"id": "AC7", "spec": "docs/changes/8.md#5", "command": "node verification/8/checks/ac7_ac8_demo_local.mjs (includes `npm run demo`)", "result": "pass"},
+  {"id": "AC8", "spec": "docs/changes/8.md#5", "command": "node verification/8/checks/ac7_ac8_demo_local.mjs", "result": "pass"},
+  {"id": "AC9", "spec": "docs/changes/8.md#5", "command": "node verification/8/checks/ac9_plain_words.mjs + NODE_PATH=$(npm root -g) node verification/8/shots.mjs (12 screenshots)", "result": "pass"},
+  {"id": "NFR-read-rate", "spec": "docs/changes/8.md#7", "command": "node verification/8/checks/ac5_read_rate.mjs", "result": "pass"},
+  {"id": "NFR-50-items", "spec": "docs/changes/8.md#7", "command": "node verification/8/checks/ac5_read_rate.mjs (50 items x 5 comments in 0.074 s)", "result": "pass"},
+  {"id": "NFR-stack", "spec": "docs/changes/8.md#7", "command": "npm ci && npm run build; npm run typecheck", "result": "pass"},
+  {"id": "DATA-MODEL", "spec": "docs/changes/8.md#8", "command": "node verification/8/checks/ac7_ac8_demo_local.mjs", "result": "pass"},
+  {"id": "BUILDER-TESTS", "spec": "server/*.test.ts", "command": "npm test", "result": "pass"}
+ ],
+ "notes": [
+  "Check was not separate: the Verifier ran in the same account as the builder (prototype profile, no TEAM_CHECKER), so there is no checker approval and no verified label.",
+  "Round 3 is a full re-verification: the Python board was replaced, so every row was rechecked with new Node checks (same scenarios as rounds 1-2). Base baseline: 0 checks, ok. No change under verification/ by anyone else since evidence commit 3575899.",
+  "AC5: every error message is still two short sentences; the clause says one plain sentence. Plain and jargon-free, so a note (same as round 2).",
+  "AC5: in the error state the page still shows the 'Waiting for you' and 'How it's going' headings with nothing under them, and 'Last checked just now' means the failed try. No stale cards are shown.",
+  "AC3: a done card with no role label has an empty holder (a merged ticket has no role:). The board also shows up to 10 recently closed stage:done items in Done; the clause speaks of open tickets but does not forbid this.",
+  "AC3: the update line is the latest header rewritten in plain words (e.g. 'Ian passed it to Vera.'), accepted because of AC9 (as in round 2).",
+  "AC6: 'if masking fails, the whole line is hidden' was not tested black-box. Lower-case names (api_key=, password:) are also masked, beyond the clause.",
+  "Scope: the diff replaces app/ with server/ and web/, adds package.json, package-lock.json, tsconfig.json, vite.config.ts and docs/decisions/0001-stack.md, and edits README.md and the spec to v2 (owner's stack change). tsconfig.json is a gate file: the owner adds gate-change-approved before merge.",
+  "CI: checks need Node 22.18+ and `npm ci && npm run build` as SETUP_CMD; on older Node each check fails with a message naming 22.18. Suite time 2.7 s.",
+  "Untested: more than 100 open items or 100 comments per item (per_page=100, no paging seen); the page when the board server itself stops; the default port 4321 (checks pass --port)."
+ ],
+ "evidence": "verification/8/"}

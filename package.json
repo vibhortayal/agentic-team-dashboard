@@ -1,0 +1,41 @@
+{
+  "name": "team-board",
+  "private": true,
+  "version": "0.1.0",
+  "description": "The progress board: a page on your own computer that shows where your project stands.",
+  "type": "module",
+  "bin": {
+    "team-board": "bin/team-board.cjs"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "dist-server",
+    "server/demo.json"
+  ],
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "build": "vite build",
+    "start": "vite build && node server/cli.ts",
+    "demo": "vite build && node server/cli.ts --demo",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "package": "node scripts/package-app.mjs",
+    "build:server": "vite build -c vite.app.config.ts",
+    "prepack": "vite build && vite build -c vite.app.config.ts"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.2.1",
+    "postject": "1.0.0-alpha.6",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "typescript": "7.0.2",
+    "vite": "8.3.6",
+    "vitest": "5.1.0"
+  }
+}
