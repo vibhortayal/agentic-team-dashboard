@@ -141,7 +141,7 @@ export function App() {
   if (!status) return <Shell title="Loading…" />;
   if (!status.signed_in) return <Shell title="Welcome"><SignIn status={status} onDone={() => void check()} /></Shell>;
   if (!status.demo && (!status.repo || picking)) {
-    return <Shell title="Welcome"><PickProject status={status} onDone={() => { setPicking(false); void check(); }} /></Shell>;
+    return <Shell title="Welcome"><PickProject status={status} first={!status.repo} onDone={() => { setPicking(false); void check(); }} /></Shell>;
   }
   if (settings) return <Settings demo={status.demo} onBack={() => setSettings(false)} />;
   return (
