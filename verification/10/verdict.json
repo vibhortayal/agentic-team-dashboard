@@ -1,41 +1,126 @@
-{"issue": 10, "rev": "bad007a625d774442e715ff23265a6bb6af52add", "base": "2f258b1", "verdict": "BLOCK", "round": 1,
- "spec": "docs/changes/10.md v1 at bad007a",
+{
+ "issue": 10,
+ "rev": "8f48f84e4677032c93bb066982d463dc482c4607",
+ "base": "2f258b1",
+ "verdict": "PASS",
+ "round": 2,
+ "spec": "docs/changes/10.md v1 (unchanged since bad007a)",
  "checks": [
-  {"id": "AC1-linux", "spec": "docs/changes/10.md#5", "command": "node verification/10/checks/ac1_one_file.mjs", "result": "pass"},
-  {"id": "AC1-mac-windows", "spec": "docs/changes/10.md#5", "command": "read .github/workflows/release.yml; node verification/10/checks/ac7_sec7_docs_release.mjs", "result": "inconclusive", "why": "macOS and Windows can't run here; the workflow runs only on a v* tag or by hand"},
-  {"id": "AC2", "spec": "docs/changes/10.md#5", "command": "node verification/10/checks/ac2_npx.mjs", "result": "pass"},
-  {"id": "AC3", "spec": "docs/changes/10.md#5", "command": "node verification/10/checks/ac3_ac5_sign_in.mjs + verification/10/shots.mjs", "result": "pass"},
-  {"id": "AC4", "spec": "docs/changes/10.md#5", "command": "node verification/10/checks/ac4_pick_project.mjs", "result": "fail", "finding": "F2"},
-  {"id": "AC5", "spec": "docs/changes/10.md#5", "command": "node verification/10/checks/ac3_ac5_sign_in.mjs + verification/10/shots.mjs", "result": "pass"},
-  {"id": "AC6", "spec": "docs/changes/10.md#5", "command": "node verification/10/checks/ac6_only_this_page.mjs", "result": "pass"},
-  {"id": "AC7", "spec": "docs/changes/10.md#5", "command": "node verification/10/checks/ac7_sec7_docs_release.mjs", "result": "pass"},
-  {"id": "AC8", "spec": "docs/changes/10.md#5", "command": "bash .github/team/run-checks.sh (verification/8/checks/*)", "result": "fail", "finding": "F1"},
-  {"id": "NFR-release-triggers-timeouts", "spec": "docs/changes/10.md#7", "command": "node verification/10/checks/ac7_sec7_docs_release.mjs", "result": "pass"},
-  {"id": "NFR-read-only-app", "spec": "docs/changes/10.md#7", "command": "none: a GitHub App setting made by the owner (section 8)", "result": "not tested"},
-  {"id": "BUILDER-TESTS", "spec": "server/*.test.ts", "command": "npm test (51 passed); npm run typecheck (exit 0)", "result": "pass"}
+  {
+   "id": "AC1-linux",
+   "spec": "docs/changes/10.md#5",
+   "command": "node verification/10/checks/ac1_one_file.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC1-mac-windows",
+   "spec": "docs/changes/10.md#5",
+   "command": "read .github/workflows/release.yml; node verification/10/checks/ac7_sec7_docs_release.mjs",
+   "result": "inconclusive",
+   "why": "macOS and Windows can't run here. The release workflow's smoke test now copies the app alone into an empty folder and starts it there; the release job needs that build job, so a failing smoke test stops the release. It runs only on a v* tag or by hand."
+  },
+  {
+   "id": "AC2",
+   "spec": "docs/changes/10.md#5",
+   "command": "node verification/10/checks/ac2_npx.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC3",
+   "spec": "docs/changes/10.md#5",
+   "command": "node verification/10/checks/ac3_ac5_sign_in.mjs + verification/10/shots.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC4",
+   "spec": "docs/changes/10.md#5",
+   "command": "node verification/10/checks/ac4_pick_project.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC4-dot-names",
+   "spec": "docs/changes/10.md#5",
+   "command": "node verification/10/checks/ac4_dot_names.mjs (round 2, changed code)",
+   "result": "pass"
+  },
+  {
+   "id": "AC5",
+   "spec": "docs/changes/10.md#5",
+   "command": "node verification/10/checks/ac3_ac5_sign_in.mjs + verification/10/shots.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC6",
+   "spec": "docs/changes/10.md#5",
+   "command": "node verification/10/checks/ac6_only_this_page.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC7",
+   "spec": "docs/changes/10.md#5",
+   "command": "node verification/10/checks/ac7_sec7_docs_release.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC8",
+   "spec": "docs/changes/10.md#5",
+   "command": "bash .github/team/run-checks.sh (verification/8/checks/*)",
+   "result": "pass"
+  },
+  {
+   "id": "NFR-release-triggers-timeouts",
+   "spec": "docs/changes/10.md#7",
+   "command": "node verification/10/checks/ac7_sec7_docs_release.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "NFR-read-only-app",
+   "spec": "docs/changes/10.md#7",
+   "command": "none: a GitHub App setting made by the owner (section 8)",
+   "result": "not tested"
+  },
+  {
+   "id": "BUILDER-TESTS",
+   "spec": "server/*.test.ts",
+   "command": "npm test (51 passed); npm run typecheck (exit 0)",
+   "result": "pass"
+  }
  ],
- "findings": [
-  {"id": "F1", "clause": "AC8 All of #8's acceptance criteria still hold; Verifier rule: passed at base but failing at head blocks",
-   "where": "server/main.ts (the run-when-started-directly block at the end of the file was removed; main() now at server/main.ts:262 is only called from server/cli.ts)",
-   "repro": "node server/main.ts --demo --port 45111 --no-open  -> exits 0 with no output; bash .github/team/run-checks.sh -> 5 #8 checks 'board did not start'",
-   "expected": "the #8 checks pass as at base 2f258b1 (they pass 166/166 when pointed at server/cli.ts, so #8 behaviour holds)",
-   "script": "verification/8/checks/*.mjs"},
-  {"id": "F2", "clause": "AC4 Pick a project ... The choice is saved; 'Change project' brings the list back.",
-   "where": "server/main.ts:275 (repo from the folder's git remote for npx/source runs) and server/main.ts:38 (that repo wins over the saved choice)",
-   "repro": "signed in, run the board in a folder whose git remote is github.com/acme/garden; POST /api/project {\"repo\":\"acme/other\"} from the page -> 200, but /api/board and /api/status still show acme/garden",
-   "expected": "the picked project acme/other is shown (and stays chosen on later runs)",
-   "script": "verification/10/checks/ac4_pick_project.mjs"}
- ],
+ "findings": [],
  "notes": [
   "Check was not separate: the Verifier ran in the same account as the builder (prototype profile, no TEAM_CHECKER), so there is no checker approval and no verified label.",
-  "AC1 macOS/Windows INCONCLUSIVE: the release workflow's smoke test runs the app from the checkout with setup-node's Node on PATH, so it proves the app starts and serves / and /api/board but not 'no Node, no other files'. Copying the app to $RUNNER_TEMP and running it there with node off PATH would match the clause.",
+  "AC1 macOS/Windows still unproved here: the smoke test now runs the app alone in an empty folder ($RUNNER_TEMP/alone), which matches 'no other files'. setup-node's Node is still on PATH there; the one-file app carries its own Node, and the Linux run shows it needs none. It has not run yet (v* tag or by hand only).",
+  "Round 2 diff (7b1a653..8f48f84) is in scope: release.yml smoke test, REPO_NAME (owner or name '.' or '..' refused, ac4_dot_names.mjs fails 4/10 on the round-1 code and passes 10/10 now), Session.repo() order --repo, saved pick, folder remote, and the run-when-started-directly block back at the end of server/main.ts.",
   "Release workflow, read: triggers v* tags + workflow_dispatch only; build 15 min, release 5 min; contents: read for build, write only for the draft release; actions pinned by tag (v4), not by SHA; only an arm64 Mac build (Intel Macs get no file); Windows: postject edits a signed node.exe, so the exe carries a broken signature rather than none (SmartScreen still shows the 'More info, Run anyway' box the README describes); the smoke test leaves the app running until the job ends.",
   "Section 8 not done yet: BUILT_IN_CLIENT_ID and BUILT_IN_APP_SLUG in server/auth.ts are empty, so a downloaded app can't sign in at all (no GITHUB_TOKEN when double-clicked) and the picker shows no 'give access to more' link. The spec says so; a release before the owner creates the GitHub App would ship an app that only runs the demo.",
   "AC3: the expired message is two sentences ('The code ran out of time. Start again to get a new one.'); the clause says one plain sentence. Plain and jargon-free, so a note (same call as #8 AC5). The refused message is one sentence.",
-  "AC4: the name pattern accepts '../etc', 'acme/..' and './.'; such a name becomes a GET to a different api.github.com path with the user's key. Read-only and same host, so a note.",
   "Gates (CI's call): server/main.test.ts is an existing test changed by the builder (constructor changes and one assertion moved from \"doesn't know which project\" to 'Pick which project to show.', in line with AC4; nothing loosened) and needs the owner's tests-approved; package.json/package-lock.json (postject dev dependency, bin, files) need deps-approved; .github/workflows/release.yml needs gate-change-approved. Sign-in code lives in server/auth.ts, which the red-zone pattern **/auth/** does not match; the owner may want to review it as sign-in.",
   "package.json keeps \"private\": true, so `npm publish` would refuse it; the README says npx works once published. Publishing is out of scope.",
   "Screens: on a phone the sign-in code wraps inside its box ('WDJB-' / 'MJHT'), see code-phone-*.png. No sideways scroll on any screen.",
-  "Not tested: refresh of an expiring key (refresh_token path), more than 100 installations or repos (per_page=100, no paging), the app's Stop button in a real browser window, double-clicking on a real Mac or Windows."
+  "Not tested: refresh of an expiring key (refresh_token path), more than 100 installations or repos (per_page=100, no paging), the app's Stop button in a real browser window, double-clicking on a real Mac or Windows.",
+  "Baseline: run-checks.sh at base 2f258b1 passed; at 8f48f84: 12 run, ok (all #8 and #10 checks). shots.mjs at 8f48f84: 33 ok.",
+  "Tamper check: git diff 7b1a653 8f48f84 -- verification/ is empty."
  ],
- "evidence": "verification/10/"}
+ "evidence": "verification/10/",
+ "round1": {
+  "rev": "bad007a625d774442e715ff23265a6bb6af52add",
+  "verdict": "BLOCK",
+  "findings": [
+   "F1 node server/main.ts no longer started the board (#8 checks failed)",
+   "F2 a picked project lost to the folder's git remote"
+  ],
+  "evidence": "7b1a653"
+ },
+ "fixed": [
+  {
+   "id": "F1",
+   "repro": "node server/main.ts --demo --port 45111 --no-open -> 'Your progress board is open at http://localhost:45111'; verification/8/checks/* 166/166 (39+37+30+17+43)",
+   "result": "fixed"
+  },
+  {
+   "id": "F2",
+   "repro": "node verification/10/checks/ac4_pick_project.mjs -> 20/20, 'started in a project folder, \"Change project\" to acme/other shows acme/other'",
+   "result": "fixed"
+  }
+ ]
+}
