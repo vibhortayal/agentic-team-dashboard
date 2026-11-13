@@ -1,14 +1,34 @@
 # Verification of #16 (Settings and keys without opening GitHub)
 
-Round 2: **PASS** on `be305af`. The spec is `docs/changes/16.md` v1, unchanged since round 1, and the base is `da515ce`.
+Round 3: **PASS** on `2568430`. This round is a new verdict, not a fix. `origin/main` (`5627a43`) was merged in at `6967ef0`, and `docs/changes/10.md` was put back to main's version at `2568430`. The spec `docs/changes/16.md` v1 is unchanged.
 
-Round 1 was a BLOCK on `b36f228` (evidence `5944bea`), with two findings below. Both are fixed.
+Round 2 was a PASS on `be305af` (evidence `195fae3`). Round 1 was a BLOCK on `b36f228` (evidence `5944bea`), and both of its findings are fixed.
 
 The Verifier ran in the same account as the builder (prototype profile, no checker identity), so there is no checker approval.
 
-Rows and how each one is checked: `checks.md`. Per-row results and notes: `verdict.json`. Tamper check: `git diff 5944bea be305af -- verification/` is empty.
+Rows and how each one is checked: `checks.md`. Per-row results and notes: `verdict.json`.
 
-## Round 2
+Tamper check: `git diff 195fae3 2568430 -- verification/16` is empty, and so was `git diff 5944bea be305af -- verification/`.
+
+## Round 3
+
+The diff from main to `2568430` holds only #16's files. In `server/github.ts`, `web/App.tsx`, `server/main.ts`, `server/settings.ts` and `web/settings.tsx`, the lines that change are the same as in `da515ce..be305af`. So the merge kept main's #11 change and #16's change as they were, and dropped neither.
+
+```
+$ npm ci && rm -rf dist dist-server && npm run build    ok
+$ npx tsc --noEmit                                       exit 0
+$ npm test                                               Test Files 6 passed (6), Tests 75 passed (75)
+$ bash .github/team/run-checks.sh                        31 run, ok
+  #16: AC1 32/32, AC2 22/22, AC3 8/8, AC4 33/33, AC5 10/10, AC6 44/44, AC7 30/30, AC8 footer 3/3, F1 3/3, round 2 11/11
+  #8:  39/39, 37/37, 30/30, 17/17, 63/63
+  #10: 9/9, 10/10, 32/32, 20/20, 10/10, 69/69, 12/12
+  #11: 12/12, 15/15, 10/10, 15/15, 6/6, 23/23, 10/10, 19/19, 29/29
+$ NODE_PATH=$(npm root -g) node verification/16/page.mjs     49 ok, 0 failed (screens unchanged)
+```
+
+The untested risk from round 2 still stands. A multi-byte character split across body pieces is changed before it is sealed. A real browser on this computer sends these bodies whole. See `verdict.json`.
+
+# Round 2 (PASS on be305af)
 
 **F1 fixed.** The server bundle now carries tweetnacl and @noble/hashes, and needs only Node's own modules. #10's one-file check passes 9/9 and its npx check 10/10. `checks/f1_bundle_alone.mjs` passes 3/3.
 

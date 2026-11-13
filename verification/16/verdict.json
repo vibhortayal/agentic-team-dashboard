@@ -1,9 +1,9 @@
 {
  "issue": 16,
- "rev": "be305af",
- "base": "da515ce",
+ "rev": "2568430",
+ "base": "5627a43 (origin/main, merged in 6967ef0)",
  "verdict": "PASS",
- "round": 2,
+ "round": 3,
  "spec": "docs/changes/16.md v1 at b36f228",
  "check_list_commit": "78dd2d2",
  "checks": [
@@ -73,12 +73,12 @@
    "spec": "docs/changes/16.md#5",
    "command": "verification/11/checks/* via run-checks.sh",
    "result": "pass",
-   "why": "ac1_waiting_second_read fails 4/6 at base and head alike: not this change"
+   "why": "all 8 #11 checks pass, including ac1_waiting_second_read 6/6 and the new ac1_not_waiting 15/15"
   },
   {
    "id": "unit+types+build",
    "spec": "docs/changes/16.md#5",
-   "command": "npm test (74/74); npx tsc --noEmit (exit 0); clean npm run build",
+   "command": "npm ci; npm test (75/75); npx tsc --noEmit (exit 0); clean npm run build",
    "result": "pass"
   },
   {
@@ -95,11 +95,11 @@
   }
  ],
  "notes": [
+  "Round 3 (2568430): origin/main 5627a43 merged in and docs/changes/10.md put back to main's version. The diff from main to 2568430 holds only #16's files. For server/github.ts, web/App.tsx, server/main.ts, server/settings.ts and web/settings.tsx, the changed lines are the same as da515ce..be305af. docs/changes/16.md is unchanged. run-checks.sh: 31 run, ok.",
   "Fixed with round 2 (were notes in round 1): every page of variables and secrets is read (31st variable, 101st, 201st secret show as set), and after big bodies the next saves on the same kept-alive connection work.",
   "Untested risk, not judged: readJson still joins the body as text piece by piece (body += chunk). When a body arrives in pieces that cut a multi-byte character in half, the character becomes U+FFFD and the changed value is sealed and saved with a 200 (7 000 CJK characters sent in 1 001-byte pieces: 7 021 saved). A real browser on this computer sent such bodies whole (Chromium, 9 of 9 exact; Node fetch 3 of 3), and keys are almost always ASCII. Collecting Buffers and decoding once would remove it. Reported in r2_changed_code.mjs as a note.",
   "Over-long now: 8 001 to 20 000 characters of body get 400 with the too-long sentence, over 20 000 get 413 with the same sentence. The box keeps at most 8 000 characters.",
   "Round 2 corrected f1_bundle_alone.mjs's third row (the coordinator pointed it out): it now uses the npm package layout (dist-server/board.cjs beside dist/) instead of board.cjs with no page. The row tested the wrong layout; the finding stood on its first two rows and on #10's own checks.",
-  "CI will still be red on verification/11/checks/ac1_waiting_second_read.mjs (4/6), which fails the same way at base da515ce: #11's open finding, not this change.",
   "Error answers are two short sentences (for example 'The box is empty. Paste the value first.'). Counted as plain, as #10's checks did for the same words.",
   "Values are trimmed: '  key-with-spaces\\n' is saved as 'key-with-spaces'. A value of only spaces is 'The box is empty.' The spec says nothing about it.",
   "A set checks setting says 'Ella set this for the team's checks.'; an unset one says 'Ella fills this in for the team's checks. Ask her in your chat.'",
@@ -107,8 +107,8 @@
   "Make on an entry without make: random is refused ('The board can't make this one up. Paste the real value.'), with nothing sent.",
   "A list file that isn't JSON gives no items and skipped 1 (the page says some of the list didn't make sense); a file with no settings array gives 'Nothing to set yet.'",
   "A GitHub 5xx on save comes back to the page as HTTP 400 (dropped connection: 502). Only the sentence reaches the person.",
-  "Scope: the diff also edits docs/changes/10.md section 8 (the App's permissions) and README.md, both about #16's permissions and the footer. tweetnacl 1.0.3 and @noble/hashes 2.4.0 need the owner's deps-approved (CI's call). No existing test was changed; server/settings.test.ts is new.",
-  "Not tested: a real GitHub token against github.com (spec section 9); the GitHub App's permissions (the App doesn't exist yet)."
+  "Not tested: a real GitHub token against github.com (spec section 9); the GitHub App's permissions (the App doesn't exist yet).",
+  "Scope: the diff from main edits README.md (footer and the board's description) and adds tweetnacl 1.0.3 and @noble/hashes 2.4.0, which need the owner's deps-approved (CI's call). No existing test was changed by #16; server/settings.test.ts is new."
  ],
  "evidence": "verification/16/",
  "round1": {
@@ -132,5 +132,10 @@
    "result": "fixed"
   }
  ],
- "tamper_check": "git diff 5944bea be305af -- verification/ is empty"
+ "tamper_check": "git diff 195fae3 2568430 -- verification/16 is empty (round 3); git diff 5944bea be305af -- verification/ was empty (round 2)",
+ "round2": {
+  "rev": "be305af",
+  "verdict": "PASS",
+  "evidence": "195fae3"
+ }
 }
