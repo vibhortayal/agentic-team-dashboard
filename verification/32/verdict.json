@@ -1,9 +1,9 @@
 {
  "issue": 32,
- "rev": "4557e3affd567227a0cc9299f0019fbef33f7e81",
+ "rev": "951c0ff37192537ceeb34e3f93efda47e4adf97d",
  "base": "5f6b2b6",
- "verdict": "BLOCK",
- "round": 1,
+ "verdict": "PASS",
+ "round": 2,
  "spec": "issue #32 and PR #31 'What changed' list (no change spec)",
  "checks": [
   {
@@ -64,23 +64,30 @@
    "id": "F1-R5-card-holder-row-unchanged",
    "spec": "issue #32 + PR #31 What changed 5 (existing behaviour unchanged)",
    "command": "node verification/32/checks/f1_card_holder_style.mjs + page.mjs",
-   "result": "fail"
-  }
- ],
- "findings": [
-  {
-   "id": "F1",
-   "row": "R5",
-   "clause": "Existing behaviour unchanged",
-   "repro": "npm run build && node verification/32/checks/f1_card_holder_style.mjs",
-   "expected": "work card holder row display:flex, gap 8px, 14px (class with the .who rule, as at base)",
-   "actual": "class l-who, display:block, gap normal, 15px: face touches the name"
+   "result": "pass"
   }
  ],
  "notes": [
+  "Round 2: F1 fixed (one line, web/App.tsx). F1 repro first, then full regression: 83 unit tests, tsc, build, 35 verifier checks, page.mjs 37/37.",
   "Every /commits/<sha> failing after /activity answers gives an empty list, with no /commits fallback; no clause covers it.",
   "Lines are ordered by commit date, not push order.",
   "An @team.invalid committer matching no role shows its raw name rather than You.",
   "Untested: real GitHub /activity paging and rate limits."
- ]
+ ],
+ "previous": {
+  "round": 1,
+  "rev": "4557e3affd567227a0cc9299f0019fbef33f7e81",
+  "verdict": "BLOCK",
+  "evidence": "21c3df1",
+  "findings": [
+   {
+    "id": "F1",
+    "row": "R5",
+    "clause": "Existing behaviour unchanged",
+    "repro": "npm run build && node verification/32/checks/f1_card_holder_style.mjs",
+    "expected": "work card holder row display:flex, gap 8px, 14px (class with the .who rule, as at base)",
+    "actual": "class l-who, display:block, gap normal, 15px: face touches the name"
+   }
+  ]
+ }
 }

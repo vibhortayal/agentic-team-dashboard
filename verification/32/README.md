@@ -1,4 +1,25 @@
-# Evidence for #32, round 1: BLOCK
+# Evidence for #32
+
+## Round 2: PASS
+
+Reviewed revision `951c0ff37192537ceeb34e3f93efda47e4adf97d`. Since round 1 (evidence `21c3df1`) the only change is
+one line in `web/App.tsx`: the work card's holder row has class `who` again. `verification/32/` was unchanged
+between my commit and that head. F1's repro ran first and passes. Then, from a clean `npm ci` and build, everything
+ran again as a regression check:
+
+| Command | Head 951c0ff |
+|---|---|
+| `node verification/32/checks/f1_card_holder_style.mjs` | ok (class `who`, flex, 8px gap) |
+| `npx vitest run` | 7 files, 83 passed |
+| `npx tsc --noEmit` | exit 0 |
+| `npm run build` | ok |
+| `bash .github/team/run-checks.sh` | 35 run, ok (R1/R2 28/28, R1 fallback 34/34, R4 9/9, F1 ok, earlier tickets' 31 ok) |
+| `NODE_PATH=$(npm root -g) node verification/32/page.mjs` | 37 ok, 0 failed (card holder row: flex, 8px, 14px) |
+
+The changed line touches no new behaviour, so I added no new checks. The screenshots were taken again at this head.
+`f1-card-round2.png` shows the fixed card. The round 1 notes below still apply.
+
+## Round 1: BLOCK
 
 Reviewed revision `4557e3affd567227a0cc9299f0019fbef33f7e81` (PR #31) against base `5f6b2b6`. Rows R1-R5 and how
 each runs: `checks.md`. Node 22.23.4, no outbound network for the board (guard preloaded), fake GitHub on 127.0.0.1.
