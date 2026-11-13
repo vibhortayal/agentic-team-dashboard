@@ -22,8 +22,22 @@ A small window opens (Terminal on a Mac, a black window on Windows) and the boar
 
 The first time, click "Sign in with GitHub", copy the code it shows into GitHub, then pick your project. The board changes nothing unless you save a setting. If you already signed in to GitHub's command-line tool during setup, the board uses that sign-in instead.
 
+## What you'll see
+
+- **Waiting for you:** anything the team needs from you, in Ella's words, with a "Try it" link when there is a new version to try.
+- **Ella handled these herself:** small calls she made without asking you, greyed out, so you can check them.
+- **What the team is doing:** every piece of work by stage (getting ready, ready to build, being built, being checked, waiting for you, done), who has it and whether it passed its check.
+- **Your app:** the live link and the versions so far, once the app is online.
+- **Settings and keys:** the keys your app needs, each with why and where to get it. Paste a key and press Save, or press "Make one for me" where the board can make it up. If the board says it can't see your project or its settings, use its "Let the board see it" link and press Install on GitHub.
+
+The board reads GitHub at most once a minute; press "Check now" to read it again. "Change project", "Sign out" and "Stop the board" are at the top.
+
 ## For developers
 
-How the team works here is in `AGENTS.md` and `TEAM.md`. From this folder: `npm install`, then `npm start` (or `npm run demo`). The board also reads `GITHUB_TOKEN` if it's set.
+How the team works here is in `AGENTS.md` and `TEAM.md`. From this folder: `npm install`, then `npm start` (or `npm run demo` for the sample project). Checks: `npm test` and `npm run typecheck`. Why TypeScript: `docs/decisions/0001-stack.md`. `npm run package` builds the one-file app for this computer into `dist-app/`; the release workflow builds the Mac and Windows ones (run it by hand with a version like `v0.2.0`).
 
-Checks: `npm test` and `npm run typecheck`. Why TypeScript: `docs/decisions/0001-stack.md`.
+Options: `--demo` (sample data, saves nothing), `--repo owner/name` (show this project instead of the saved one), `--port <n>` (default 4321; the next nine are tried if it's busy), `--no-open` (don't open the browser). The board only listens on this computer.
+
+Sign-in, in this order: the board's own saved sign-in, then `GITHUB_TOKEN` or `GH_TOKEN`, then the GitHub command-line tool's sign-in. The saved sign-in and chosen project live in `~/.config/team-board/config.json` on Mac and Linux, or `%APPDATA%\team-board\config.json` on Windows (`BOARD_CONFIG_DIR` moves it). `BOARD_GITHUB_CLIENT_ID=none` turns "Sign in with GitHub" off; `BOARD_GITHUB_CLIENT_ID` and `BOARD_GITHUB_APP_SLUG` point it at another GitHub App. `BOARD_GITHUB_API` and `BOARD_GITHUB_WEB` are for tests and only accept an address on this computer.
+
+What the board reads from GitHub is the contract in `.team/docs/github-state.md`, "What a person sees".
