@@ -8,11 +8,15 @@ A page on your own computer that shows what is waiting on you and how each piece
 
 There are two ways to open it. Pick one.
 
-**Download it (nothing else to install).** From the [latest release](https://github.com/vibhortayal/agentic-team-dashboard/releases/latest), take the file for your computer: `Team-Board-mac-arm64.zip` for a Mac with an Apple chip (M1 or later; older Intel Macs aren't supported yet), `Team-Board-windows-x64.exe` for Windows. Open it, and the board opens in your browser. Keep the small window it opens; close it to stop the board.
+**Download it (nothing else to install).** Open the [latest release](https://github.com/vibhortayal/agentic-team-dashboard/releases/latest) and, under Assets, click the file for your computer (about 110 MB):
+- Mac with an Apple chip (M1 or newer): `Team-Board-mac-arm64.zip`. Older Intel Macs aren't supported yet.
+- Windows: `Team-Board-windows-x64.exe`.
 
 The app isn't signed yet (signing costs money each year), so the first time your computer warns you:
-- Mac: double-click the zip, then double-click the app. When it says it can't check the app, open System Settings > Privacy & Security, scroll down and click "Open Anyway".
-- Windows: when the blue "Windows protected your PC" box appears, click "More info", then "Run anyway".
+- Mac: double-click the zip, then double-click `Team-Board-mac-arm64`. When the Mac says it can't verify the app, click Done. Open System Settings > Privacy & Security, scroll down, click "Open Anyway", type your password and click Open.
+- Windows: if the browser says the file isn't commonly downloaded, choose Keep (in Edge: the three dots, then Keep, then Keep anyway). Double-click the file. When the blue "Windows protected your PC" box appears, click "More info", then "Run anyway".
+
+A small window opens (Terminal on a Mac, a black window on Windows) and the board opens in your browser. Keep that window open; close it to stop the board. Next time, just double-click the file.
 
 **Or type one command** (needs Node 22.18 or newer): `npx team-board`. Add `--demo` to see sample data. (This works once the package is published to npm.)
 
