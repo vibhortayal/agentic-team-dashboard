@@ -34,7 +34,7 @@ jobs:
           - os: windows-latest
             file: Team-Board-windows-x64.exe
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30   # Apple's check usually takes a few minutes, sometimes longer
+    timeout-minutes: 15   # Apple's check below usually takes a few minutes; it gives up at 12
     permissions:
       contents: read
     steps:
@@ -104,7 +104,7 @@ jobs:
           done
           ditto -c -k --keepParent "$APP" "$RUNNER_TEMP/notarize.zip"
           xcrun notarytool submit "$RUNNER_TEMP/notarize.zip" --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" \
-            --password "$APPLE_APP_PASSWORD" --wait --timeout 20m --output-format json > "$RUNNER_TEMP/notary.json" || true
+            --password "$APPLE_APP_PASSWORD" --wait --timeout 12m --output-format json > "$RUNNER_TEMP/notary.json" || true
           cat "$RUNNER_TEMP/notary.json"; echo
           STATUS="$(plutil -extract status raw -o - "$RUNNER_TEMP/notary.json" 2>/dev/null || echo unknown)"
           if [ "$STATUS" != "Accepted" ]; then
