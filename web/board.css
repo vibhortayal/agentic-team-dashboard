@@ -118,3 +118,19 @@ button.link { border: 0; background: none; padding: 0; color: var(--accent); tex
 .vnotes { margin: 4px 0 0; color: var(--muted); white-space: pre-line; font-size: 15px; }
 .version.v-earlier .vname { font-weight: 500; color: var(--muted); }
 a.try { display: inline-block; margin: 2px 0 6px; font-weight: 600; font-size: 15px; }
+
+/* Settings and keys */
+.settings { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; max-width: 760px; }
+.setting { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 20px; box-shadow: var(--shadow); }
+.setting.is-missing { background: var(--need-bg); border-color: var(--need-line); }
+.sethead { display: flex; gap: 12px; justify-content: space-between; align-items: start; }
+.sethead .what { margin: 0; font-weight: 600; }
+.setname { margin: 4px 0 10px; color: var(--muted); font-size: 14px; }
+.setname code { font-size: 13px; overflow-wrap: anywhere; }
+.setvalue { margin: 0 0 10px; overflow-wrap: anywhere; }
+.howto { margin: 0 0 6px; }
+.setting .typed { margin-top: 8px; }
+.setting .typed button.link { margin-top: 10px; }
+.check.ok { color: var(--ok); background: var(--ok-bg); white-space: nowrap; }
+.check.warn { color: var(--warn); background: var(--warn-bg); white-space: nowrap; }
+.need-count { font-weight: 600; }

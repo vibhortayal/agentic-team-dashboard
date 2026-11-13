@@ -1,7 +1,8 @@
 // Read the project's issues, pull requests and team comments from GitHub.
 //
-// Read only. Sign-in comes from GITHUB_TOKEN or GH_TOKEN, or from the GitHub command-line tool
-// if it is installed and signed in. Nothing is ever written.
+// Sign-in comes from GITHUB_TOKEN or GH_TOKEN, or from the GitHub command-line tool if it is
+// installed and signed in. The board writes only one thing: a setting the person saves on the
+// Settings page (settings.ts), through `send` below.
 
 import { execFileSync } from "node:child_process";
 import { isProduction, type AppData, type Deploy, type GhComment, type GhItem, type GhRelease, type PullHead } from "./model.ts";
@@ -50,16 +51,45 @@ export function repoFromUrl(url: string): string | null {
   return m ? `${m[1]}/${m[2]}` : null;
 }
 
-async function get<T>(path: string, token: string | null): Promise<T> {
-  const headers: Record<string, string> = {
+function headers(token: string | null): Record<string, string> {
+  const h: Record<string, string> = {
     Accept: "application/vnd.github+json",
     "X-GitHub-Api-Version": "2022-11-28",
     "User-Agent": "team-progress-board",
   };
-  if (token) headers.Authorization = `Bearer ${token}`;
+  if (token) h.Authorization = `Bearer ${token}`;
+  return h;
+}
+
+/** One change on GitHub. Returns the status code; the caller decides what each one means. */
+export async function send(method: "PUT" | "PATCH" | "POST", path: string, token: string, body: unknown): Promise<number> {
+  try {
+    const resp = await fetch(apiBase() + path, {
+      method, headers: { ...headers(token), "Content-Type": "application/json" },
+      body: JSON.stringify(body), signal: AbortSignal.timeout(20_000),
+    });
+    await resp.body?.cancel();
+    return resp.status;
+  } catch {
+    throw new CantRead("The board can't reach GitHub. Check your internet connection.");
+  }
+}
+
+/** A read that hands back GitHub's status instead of a sentence, for callers that tell 403 from 404. */
+export async function look(path: string, token: string | null): Promise<{ status: number; data: unknown }> {
+  try {
+    const resp = await fetch(apiBase() + path, { headers: headers(token), signal: AbortSignal.timeout(20_000) });
+    const data: unknown = resp.ok ? await resp.json().catch(() => null) : (await resp.body?.cancel(), null);
+    return { status: resp.status, data };
+  } catch {
+    throw new CantRead("The board can't reach GitHub. Check your internet connection.");
+  }
+}
+
+export async function get<T>(path: string, token: string | null): Promise<T> {
   let resp: Response;
   try {
-    resp = await fetch(apiBase() + path, { headers, signal: AbortSignal.timeout(20_000) });
+    resp = await fetch(apiBase() + path, { headers: headers(token), signal: AbortSignal.timeout(20_000) });
   } catch {
     throw new CantRead("The board can't reach GitHub. Check your internet connection.");
   }

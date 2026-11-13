@@ -1,6 +1,7 @@
 import { fileURLToPath } from "node:url";
 // The progress board: a page on your own computer that shows where your project stands.
-// It only reads GitHub and only listens on this computer (127.0.0.1).
+// It only listens on this computer (127.0.0.1). It reads GitHub, and writes only a setting the
+// person saves on the Settings page (settings.ts).
 
 import { execFile } from "node:child_process";
 import { createServer, type IncomingMessage, type Server } from "node:http";
@@ -10,6 +11,7 @@ import { demoData, insideApp, pageBuilt, pageFile } from "./assets.ts";
 import { clientId, installUrl, pollSignIn, refresh, startSignIn } from "./auth.ts";
 import * as config from "./config.ts";
 import { CantRead, findToken, listProjects, readApp, readProject, REPO_NAME, repoFromGit } from "./github.ts";
+import { DEMO_SETTINGS, readSettings, saveSetting, SaveRefused } from "./settings.ts";
 import { buildBoard, errorBoard, NO_APP_DATA, type AppData, type Board, type GhComment, type GhItem } from "./model.ts";
 
 const CACHE_MS = 60_000; // read GitHub at most once a minute
@@ -163,7 +165,7 @@ export function makeServer(source: Source, port: number, onStop: () => void = ()
       } catch {
         return json(400, { error: "That request didn't make sense." });
       }
-      if (session.demo && path !== "/api/stop") return json(400, { error: "The demo can't sign in or change project." });
+      if (session.demo && path !== "/api/stop") return json(400, { error: "The demo can't sign in, change project or save settings." });
 
       if (path === "/api/signin/start") {
         const id = clientId();
@@ -211,6 +213,20 @@ export function makeServer(source: Source, port: number, onStop: () => void = ()
         source.reset();
         return json(200, { ok: true });
       }
+      if (path === "/api/settings") {
+        // { name, value } saves what the person pasted; { name, make: true } has the board make one up.
+        const name = typeof body.name === "string" ? body.name : "";
+        const typed = body.make === true ? null : typeof body.value === "string" ? body.value : "";
+        const repo = session.repo();
+        const token = await session.token();
+        if (!repo || !token) return json(400, { error: "Sign in and pick your project first." });
+        try {
+          await saveSetting(repo, token, name, typed);
+          return json(200, { ok: true });
+        } catch (e) {
+          return json(e instanceof SaveRefused ? 400 : 502, { error: e instanceof SaveRefused || e instanceof CantRead ? e.message : "GitHub didn't save it just now. Try again in a minute." });
+        }
+      }
       if (path === "/api/stop") {
         json(200, { ok: true });
         setTimeout(onStop, 100);
@@ -233,6 +249,12 @@ export function makeServer(source: Source, port: number, onStop: () => void = ()
       });
     }
     if (path === "/api/board") return json(200, await source.get());
+    if (path === "/api/settings") {
+      if (session.demo) return json(200, DEMO_SETTINGS);
+      const repo = session.repo();
+      if (!repo) return json(400, { error: "Pick your project first." });
+      return json(200, await readSettings(repo, await session.token()));
+    }
     if (path === "/api/projects") {
       const token = await session.token();
       if (!token) return json(401, { error: "Sign in first." });

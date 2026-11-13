@@ -4,7 +4,7 @@ The front door to the agent team, built by the team itself. How the team works h
 
 ## The progress board
 
-A page on your own computer that shows what is waiting on you and how each piece of work is going. It only reads your project on GitHub; it changes nothing.
+A page on your own computer that shows what is waiting on you and how each piece of work is going. It reads your project on GitHub. It changes something only when you save a setting or key on its Settings page, so you never have to open GitHub for that.
 
 There are two ways to open it. Pick one.
 
@@ -16,7 +16,7 @@ The app isn't signed yet (signing costs money each year), so the first time your
 
 **Or type one command** (needs Node 22.18 or newer): `npx team-board`. Add `--demo` to see sample data. (This works once the package is published to npm.)
 
-The first time, click "Sign in with GitHub", copy the code it shows into GitHub, then pick your project. The board only reads; it changes nothing. It also uses `GITHUB_TOKEN` or the GitHub command-line tool's sign-in if you have one.
+The first time, click "Sign in with GitHub", copy the code it shows into GitHub, then pick your project. The board changes nothing unless you save a setting. It also uses `GITHUB_TOKEN` or the GitHub command-line tool's sign-in if you have one.
 
 From this folder: `npm install`, then `npm start` (or `npm run demo`).
 

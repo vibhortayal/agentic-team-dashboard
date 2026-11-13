@@ -1,7 +1,8 @@
 // "Sign in with GitHub" without a password box: GitHub's device sign-in.
 // The board shows a short code; you type it on github.com; GitHub hands the board a key that can
-// only read the projects you let it see. The board's GitHub App asks for read access to issues,
-// pull requests and metadata, nothing else.
+// only reach the projects you let it see. The board's GitHub App asks for read access to issues,
+// pull requests, metadata and contents, and read and write access to Actions secrets and variables
+// for the Settings page (#16), nothing else.
 
 /** The board's GitHub App. Its client id is public by design (it is not a secret). */
 export function clientId(env: NodeJS.ProcessEnv = process.env): string | null {
