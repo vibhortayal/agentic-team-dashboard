@@ -3,6 +3,9 @@
 # A gate file, owned by the owner. Runs only when the owner pushes a v* tag or starts it by hand,
 # never on pull requests (Mac minutes cost about ten times Linux ones). Started by hand with a
 # version such as v0.1.0, it also makes the tag and the draft release, so nobody needs a terminal.
+# This repo is private, so the same files also go to a draft release on the public team repo
+# (tag board-vX.Y.Z), where anyone can download them. That needs the PUBLIC_RELEASE_TOKEN secret:
+# a fine-grained token for the public repo only, with Contents read and write. Without it, that step is skipped.
 name: release
 
 on:
@@ -83,3 +86,11 @@ jobs:
         run: |
           [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "The version must look like v0.1.0, not '$VERSION'."; exit 1; }
           gh release create "$VERSION" out/* --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --draft --title "Progress board $VERSION" --notes "Download the file for your computer. It isn't signed yet, so your computer will warn you the first time. See the README for the two clicks that open it."
+      - name: Put the same files on the public repo, where anyone can download them
+        env:
+          GH_TOKEN: ${{ secrets.PUBLIC_RELEASE_TOKEN }}
+          VERSION: ${{ inputs.version || github.ref_name }}
+          PUBLIC_REPO: vibhortayal/agentic-team-oss
+        run: |
+          if [ -z "$GH_TOKEN" ]; then echo "PUBLIC_RELEASE_TOKEN isn't set, so the files stay on this private repo only."; exit 0; fi
+          gh release create "board-$VERSION" out/* --repo "$PUBLIC_REPO" --target main --draft --title "Progress board $VERSION" --notes "The progress board: a page on your own computer that shows how your project is going and what is waiting on you. Download Team-Board-mac-arm64.zip for a Mac with an Apple chip (M1 or later), or Team-Board-windows-x64.exe for Windows. It isn't signed yet, so your computer warns you the first time. On a Mac: double-click the zip, then the app, then open System Settings > Privacy & Security and click Open Anyway. On Windows: click More info, then Run anyway."
