@@ -15,7 +15,9 @@ from the pull request, so a pull request cannot change the guard that judges it
 classify  Prints the pull request's class from its branch name: ticket, trivial is a
           ticket too (team/<issue>-...), docs (docs/...), records (team/records),
           tests (verify/<issue>-tests), deps (dependabot/... or deps/...), gate (gate/...).
-          Any other branch name fails: the team only opens these.
+          Any other branch name fails, unless the PR description has one line
+          "Team branch: <name>" naming one of these (for agent tools that pick the
+          branch name themselves); then that name decides the class and the rules.
 tamper    Fails when the PR touches a protected zone (zones.yml, read from base) without
           the owner's approval label, or touches paths its class may not touch.
           Approval labels count only if the owner's own account added them after the
@@ -109,7 +111,22 @@ def changed(base, head):
     return pairs
 
 
+TEAM_BRANCH_RE = re.compile(r"^[ \t>*_]*Team branch:[ \t*_]*`?([^\s`]+)`?[ \t*_]*$", re.I | re.M)
+
+
 def classify(branch):
+    """The class of a branch. A branch whose name the agent tool chose for us (say a tool that
+    may only push to its own prefix) takes its class from a "Team branch: <name>" line in the
+    PR description (PR_BODY), with exactly the same rules as a branch of that name."""
+    cls, issue = branch_class(branch)
+    if cls is None:
+        named = TEAM_BRANCH_RE.findall(os.environ.get("PR_BODY") or "")
+        if len(named) == 1:
+            return branch_class(named[0])
+    return cls, issue
+
+
+def branch_class(branch):
     m = re.fullmatch(r"team/(\d+)-[A-Za-z0-9._-]+", branch)
     if m:
         return "ticket", int(m.group(1))
@@ -164,9 +181,11 @@ def cmd_classify(a):
     cls, issue = classify(a.branch)
     if cls is None:
         print(f"classify: FAIL, branch '{a.branch}' is not a team branch "
-              "(team/<issue>-<slug>, docs/<topic>, team/records, verify/<issue>-tests, deps/..., dependabot/..., gate/...)")
+              "(team/<issue>-<slug>, docs/<topic>, team/records, verify/<issue>-tests, deps/..., dependabot/..., gate/...), "
+              "and the PR description has no single 'Team branch: <one of those>' line")
         return 1
-    print(f"class={cls}" + (f" issue={issue}" if issue else ""))
+    via = "" if branch_class(a.branch)[0] else " (from the PR's 'Team branch:' line)"
+    print(f"class={cls}" + (f" issue={issue}" if issue else "") + via)
     return 0
 
 
