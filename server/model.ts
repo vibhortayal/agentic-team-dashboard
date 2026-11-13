@@ -198,20 +198,21 @@ export function teamComments(comments: GhComment[]): Array<[GhComment, TeamEvent
 }
 
 const ASK_MAX = 600;
-// Real HTML tags only, so "Press <Enter>" or "a<b and c>d" stay as written.
-const HTML_TAG = /<\/?(?:a|abbr|b|blockquote|br|code|dd|del|details|div|dl|dt|em|h[1-6]|hr|i|img|ins|kbd|li|ol|p|picture|pre|q|s|samp|source|span|strong|sub|summary|sup|table|tbody|td|th|thead|tr|tt|u|ul|var)\b[^<>]*>/g;
+// Known HTML tag names only, so text such as "Press <Enter>" stays as written.
+const HTML_TAG = /<\/?(?:a|abbr|b|blockquote|br|code|dd|del|details|div|dl|dt|em|h[1-6]|hr|i|img|ins|kbd|li|ol|p|picture|pre|q|s|samp|source|span|strong|sub|summary|sup|table|tbody|td|th|thead|tr|tt|u|ul|var)\b[^<>]*>/gi;
 // The evidence line's fields are for the team, not for the person trying the app.
 const EVIDENCE = /^\W*(Rows|Revision|Files|Command|Expected \/ actual|Repro)\s*:/i;
 
 /** A comment as plain text for a non-coder: no team header, hidden data, Markdown marks or code. */
 export function plainMessage(body: string, max = ASK_MAX): string {
-  // Mask first: cleaning removes marks such as "_" that are part of a key's shape.
-  let text = mask(body || "")
+  let text = (body || "")
     .replace(/<!--[\s\S]*?-->/g, "")
     .replace(HTML_TAG, "")
     .replace(/```[\s\S]*?```/g, "")
     .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
     .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1");
+  // Mask before the marks go: removing "_" would change a key's shape so the mask misses it.
+  text = mask(text);
   const lines = text.split("\n").map((l) => l.trim());
   // The team header is the first line ("**Ella · Engagement Lead** → owner"): a role marker, not a message.
   const first = lines.findIndex((l) => l.length > 0);
