@@ -119,6 +119,26 @@ try {
     log(hrefs.every((h) => h.startsWith("https:")), `AC1 every link on the page is https (${JSON.stringify(hrefs)})`);
   }
 
+  { // F. v2 (round 5): only a waiting change shows Try it; work cards never do
+    const items = [item(30, "Seed list page", ["stage:verifying", "role:verifier", "needs-human", "human:approve-ui"], { pr: true }),
+      item(35, "Watering log", ["stage:verifying", "role:verifier"], { pr: true }),
+      item(36, "Help page", ["stage:building", "role:implementer"])];
+    const cm = { 30: [asking(30, "Try it.")],
+      36: [comment(36, "**Ian (implementer) → Vera (verifier)** · handoff", "Over to you.", ev("implementer", "verifier", "handoff", { preview: "https://help.preview.example/" }))] };
+    const pulls = { 30: { ref: "feat/seeds" }, 35: { ref: "feat/water", sha: "b".repeat(40) } };
+    const deployments = [deploy({ url: PREVIEW, day: 11 }), deploy({ ref: "feat/water", sha: "b".repeat(40), url: "https://water.preview.example/", day: 12 }),
+      deploy({ env: "Production", url: LIVE, day: 9 })];
+    const { page } = await boardPage(browser, [items, cm, { deployments, pulls }], "v2");
+    const tries = page.getByRole("link", { name: "Try it" });
+    const hrefs = await tries.evaluateAll((as) => as.map((a) => a.href));
+    log(hrefs.length === 1 && hrefs[0] === PREVIEW, `AC1 v2 only the waiting change has Try it; changes not waiting have none, from a deployment or a comment (${JSON.stringify(hrefs)})`);
+    log(await page.locator("article.card").getByRole("link", { name: "Try it" }).count() === 0, "AC1 v2 no work card shows Try it");
+    for (const w of ["phone", "desktop"]) {
+      await page.setViewportSize(SIZES[w]); await page.waitForTimeout(150);
+      log(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), `v2 board at ${w} width: no sideways scroll`);
+    }
+  }
+
   { // C. nothing online yet
     const { page } = await boardPage(browser, [[item(32, "Watering log", ["stage:building", "role:implementer"])], {}, {}], "empty");
     const app = page.locator("section", { has: page.getByRole("heading", { name: "Your app" }) });
