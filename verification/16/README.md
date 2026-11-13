@@ -1,12 +1,42 @@
 # Verification of #16 (Settings and keys without opening GitHub)
 
-Round 1: **BLOCK** on `b36f228e4fb8c83f7d5201af88f3d1fdbb8c75b0`. The spec is `docs/changes/16.md` v1 at that commit, and the base is `da515ce`.
+Round 2: **PASS** on `be305af`. The spec is `docs/changes/16.md` v1, unchanged since round 1, and the base is `da515ce`.
+
+Round 1 was a BLOCK on `b36f228` (evidence `5944bea`), with two findings below. Both are fixed.
 
 The Verifier ran in the same account as the builder (prototype profile, no checker identity), so there is no checker approval.
 
-Rows and how each one is checked: `checks.md` (committed before any check ran, in `78dd2d2`). Per-row results and notes: `verdict.json`.
+Rows and how each one is checked: `checks.md`. Per-row results and notes: `verdict.json`. Tamper check: `git diff 5944bea be305af -- verification/` is empty.
 
-The settings work itself holds up. Secrets are sealed with the project's key and open with libsodium. They are never returned, logged or saved. The six checks settings are read-only, and names off the list are refused. Saving obeys the origin rules, and the demo saves nothing. Two findings block it.
+## Round 2
+
+**F1 fixed.** The server bundle now carries tweetnacl and @noble/hashes, and needs only Node's own modules. #10's one-file check passes 9/9 and its npx check 10/10. `checks/f1_bundle_alone.mjs` passes 3/3.
+
+I corrected that script's third row. In round 1 it copied `board.cjs` with no `dist/` beside it, which stops with "The page isn't built yet" even at base. It now uses the npm package layout: `dist-server/board.cjs` beside `dist/`, with no `node_modules`. The finding itself stood on the script's first two rows and on #10's own checks.
+
+**F2 fixed.** `checks/ac6_problems.mjs` passes 44/44. A 12 000-character value gets 400 with the too-long sentence. Values of 49 153 and 1 048 576 characters get 413 with the same sentence. The box now keeps at most 8 000 characters.
+
+**Changed code, checked** (`checks/r2_changed_code.mjs`, 11/11):
+- Variables on pages 2 and 3 show as set, with their values. So do secrets on pages 2 and 3.
+- Exactly one full page of variables works.
+- When page 2 fails to load, the page shows a plain problem.
+- After 1 MB and 26 000-character bodies, ordinary saves on the same kept-alive connections work: `1048576:413 26000:413 4000:200 1048576:413 4000:200 100:200 4000:200`.
+
+**Untested risk (a note, not judged).** The body reader still joins the request as text, piece by piece. If a body arrives in pieces that cut a multi-byte character in half, that character changes. The changed value is then saved with a 200: 7 000 CJK characters sent in 1 001-byte pieces were saved as 7 021. A real browser on this computer sent the same values whole (Chromium 9 of 9 exact, Node fetch 3 of 3), and keys are almost always plain ASCII. Collecting the bytes and decoding once would remove the risk.
+
+```
+$ rm -rf dist dist-server && npm run build    built
+$ npx tsc --noEmit                            exit 0
+$ npm test                                    Test Files 6 passed (6), Tests 74 passed (74)
+$ bash .github/team/run-checks.sh             30 run
+  #16: AC1 32/32, AC2 22/22, AC3 8/8, AC4 33/33, AC5 10/10, AC6 44/44, AC7 30/30, AC8 footer 3/3, F1 3/3, round 2 11/11
+  #8:  39/39, 37/37, 30/30, 17/17, 63/63
+  #10: 9/9, 10/10, 32/32, 20/20, 10/10, 69/69, 12/12
+  #11: all pass except ac1_waiting_second_read 4/6, the same at base da515ce (not this change; CI stays red on it)
+$ NODE_PATH=$(npm root -g) node verification/16/page.mjs     49 ok, 0 failed
+```
+
+# Round 1 (BLOCK on b36f228)
 
 ## F1: the one-file app and the npm package no longer start (AC8, via #10 AC1 and AC2)
 

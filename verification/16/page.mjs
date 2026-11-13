@@ -82,6 +82,9 @@ try {
 
   const box = row(page, "OPENAI_API_KEY").locator("input");
   log((await box.getAttribute("type")) === "password", "AC2 a secret is typed in a password box");
+  // Round 2: the box takes at most 8 000 characters, so a pasted file stops there instead of being sent.
+  await box.fill("p".repeat(9000));
+  log((await box.inputValue()).length === 8000, `round 2: the box keeps at most 8 000 characters (${(await box.inputValue()).length})`);
   await box.fill(VALUE);
   await row(page, "OPENAI_API_KEY").getByRole("button", { name: "Save" }).click();
   await page.waitForTimeout(800);
