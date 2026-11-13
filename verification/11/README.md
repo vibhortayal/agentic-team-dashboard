@@ -37,7 +37,7 @@ $ bash .github/team/run-checks.sh
 AC1 Try it: 15/15                AC1 Try it with other open pull requests: 10/10
 AC2 the ask: 23/23               AC2 masked keys with _: 10/10
 AC3 your app: 19/19              AC5/sec 7 optional reads: 29/29
-verifier checks: 18 run, ok      (before ac1_failed_newest.mjs was added)
+verifier checks: 19 run, FAIL    (ac1_failed_newest.mjs, F4)
 $ node verification/11/checks/ac1_failed_newest.mjs     11/12   <- F4
 $ NODE_PATH=$(npm root -g) node verification/11/page.mjs     page.mjs: all ok, 16 screenshots, no sideways scroll
 ```
