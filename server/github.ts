@@ -103,3 +103,25 @@ export async function readProject(repo: string, token: string | null): Promise<{
   }
   return { items, comments };
 }
+
+export interface Project { repo: string; private: boolean }
+
+/** Projects this sign-in can see: through the board's GitHub App if it has one, else every repo you can read. */
+export async function listProjects(token: string): Promise<Project[]> {
+  const shape = (r: { full_name: string; private?: boolean }): Project => ({ repo: r.full_name, private: !!r.private });
+  try {
+    const inst = await get<{ installations: Array<{ id: number }> }>("/user/installations?per_page=100", token);
+    const out: Project[] = [];
+    for (const i of inst.installations) {
+      const r = await get<{ repositories: Array<{ full_name: string; private?: boolean }> }>(`/user/installations/${i.id}/repositories?per_page=100`, token);
+      out.push(...r.repositories.map(shape));
+    }
+    if (out.length) return out;
+  } catch {
+    // Not a GitHub App sign-in (for example the GitHub command-line tool's): fall back below.
+  }
+  const repos = await get<Array<{ full_name: string; private?: boolean }>>("/user/repos?per_page=100&sort=updated", token);
+  return repos.map(shape);
+}
+
+export const REPO_NAME = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;

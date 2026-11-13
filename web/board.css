@@ -90,3 +90,14 @@ ul { list-style: none; padding: 0; margin: 0; }
 .face.vera { background: #1f7a4d; } .face.rohan { background: #8a6d1f; } .face.quinn { background: #9b3b5a; }
 .face.arjun { background: #3b6e7a; } .face.max { background: #5a5fb0; } .face.bea { background: #a0522d; }
 .face.otto { background: #4f6b3a; }
+.actions { display: flex; gap: 14px; width: 100%; justify-content: flex-end; }
+button.link { border: 0; background: none; padding: 0; color: var(--accent); text-decoration: underline; font-size: 14px; }
+.setup { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 22px; max-width: 640px; }
+.setup p { margin: 8px 0; }
+.primary, a.primary { background: var(--accent); color: var(--accent-ink); border: 0; text-decoration: none; padding: 9px 16px; border-radius: 999px; font-weight: 600; display: inline-block; }
+.steps { padding-left: 22px; } .steps li { margin: 12px 0; }
+.code { font: 600 22px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 2px; margin: 0 10px; padding: 6px 10px; border-radius: 8px; background: var(--need-bg); border: 1px solid var(--need-line); }
+.projects { display: grid; gap: 8px; margin: 12px 0; } .projects button { width: 100%; text-align: left; }
+.typed { margin-top: 16px; } .typed label { display: block; color: var(--muted); font-size: 15px; margin-bottom: 6px; }
+.typed div { display: flex; gap: 8px; } .typed input { flex: 1; min-width: 0; font: inherit; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+.problem-line { color: var(--warn); }

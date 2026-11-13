@@ -1,6 +1,7 @@
 // Draws the board from /api/board. React escapes every piece of text, so nothing is shown as HTML.
 import { useCallback, useEffect, useState } from "react";
 import type { Board, Card, Column } from "../server/model.ts";
+import { PickProject, postJson, SignIn, type Status } from "./setup.tsx";
 
 const FACE_CLASS: Record<string, string> = {
   Ella: "ella", Priya: "priya", Ian: "ian", Vera: "vera", Rohan: "rohan",
@@ -88,6 +89,49 @@ const STOPPED: Omit<Board, "updated"> = {
 };
 
 export function App() {
+  const [status, setStatus] = useState<Status | null>(null);
+  const [stopped, setStopped] = useState(false);
+  const [picking, setPicking] = useState(false);
+
+  const check = useCallback(async () => {
+    try {
+      const r = await fetch("/api/status", { cache: "no-store" });
+      setStatus((await r.json()) as Status);
+    } catch {
+      setStopped(true);
+    }
+  }, []);
+  useEffect(() => { void check(); }, [check]);
+
+  if (stopped) return <Shell title="Board stopped"><section className="problem"><h2>The board isn't running</h2><p>Start it again to see your project.</p></section></Shell>;
+  if (!status) return <Shell title="Loading…" />;
+  if (!status.signed_in) return <Shell title="Welcome"><SignIn status={status} onDone={() => void check()} /></Shell>;
+  if (!status.demo && (!status.repo || picking)) {
+    return <Shell title="Welcome"><PickProject status={status} onDone={() => { setPicking(false); void check(); }} /></Shell>;
+  }
+  return (
+    <BoardView
+      status={status}
+      onChangeProject={() => setPicking(true)}
+      onSignOut={async () => { await postJson("/api/signout"); void check(); }}
+      onStop={async () => { await postJson("/api/stop").catch(() => null); setStopped(true); }}
+    />
+  );
+}
+
+function Shell({ title, children }: { title: string; children?: React.ReactNode }) {
+  return (
+    <>
+      <header className="top"><div><p className="eyebrow">Your project board</p><h1>{title}</h1></div></header>
+      <main>{children}</main>
+      <footer className="foot">This board only reads your project. It changes nothing and runs on your computer.</footer>
+    </>
+  );
+}
+
+function BoardView({ status, onChangeProject, onSignOut, onStop }: {
+  status: Status; onChangeProject: () => void; onSignOut: () => void; onStop: () => void;
+}) {
   const [board, setBoard] = useState<Board | null>(null);
   const [busy, setBusy] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
@@ -126,6 +170,13 @@ export function App() {
           <span aria-live="polite">{board ? `Last checked ${ago(board.updated, nowMs)}` : ""}</span>
           <button type="button" onClick={() => void load()} disabled={busy}>{busy ? "Checking…" : "Check now"}</button>
         </div>
+        {!status.demo && (
+          <nav className="actions">
+            <button type="button" className="link" onClick={onChangeProject}>Change project</button>
+            {status.saved_sign_in && <button type="button" className="link" onClick={onSignOut}>Sign out</button>}
+            {status.inside_app && <button type="button" className="link" onClick={onStop}>Stop the board</button>}
+          </nav>
+        )}
       </header>
 
       <main>

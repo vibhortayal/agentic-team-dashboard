@@ -1,0 +1,74 @@
+# Release: builds the one-file board app on GitHub's Mac and Windows machines, starts each
+# one with the sample project to prove it runs, and attaches it to a draft GitHub release.
+# A gate file, owned by the owner. Runs only when the owner pushes a v* tag or starts it by hand,
+# never on pull requests (Mac minutes cost about ten times Linux ones).
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - os: macos-latest      # Apple silicon
+            file: Team-Board-mac-arm64
+          - os: windows-latest
+            file: Team-Board-windows-x64.exe
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.18"
+      - run: npm ci
+      - run: npm run package
+      - name: Smoke test (start the app with the sample project and read the board)
+        shell: bash
+        run: |
+          export BOARD_CONFIG_DIR="$RUNNER_TEMP/board-config"
+          "dist-app/${{ matrix.file }}" --demo --no-open --port 4399 > "$RUNNER_TEMP/app.log" 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:4399/api/board > "$RUNNER_TEMP/board.json"; then break; fi
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/app.log"
+          grep -q '"sample/recipe-box"' "$RUNNER_TEMP/board.json"
+          curl -sf http://localhost:4399/ | grep -q '<title>Your project board</title>'
+          echo "The app started and served the board."
+      - name: Zip the Mac app (a zip keeps it runnable after download)
+        if: runner.os == 'macOS'
+        run: cd dist-app && zip -q "${{ matrix.file }}.zip" "${{ matrix.file }}" && rm "${{ matrix.file }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.file }}
+          path: dist-app/*
+          retention-days: 7
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write   # to create the draft release
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+      - name: Create a draft release (the owner publishes it)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "$GITHUB_REF_NAME" out/* --repo "$GITHUB_REPOSITORY" --draft --title "Progress board $GITHUB_REF_NAME" --notes "Download the file for your computer. It isn't signed yet, so your computer will warn you the first time. See the README for the two clicks that open it."
