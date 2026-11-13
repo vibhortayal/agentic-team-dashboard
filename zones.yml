@@ -2,12 +2,15 @@
 # Format: each zone is a list of glob patterns ("**" matches across folders). Matching ignores case.
 # The tamper guard reads it on every pull request (scripts/team_gates.py).
 
-# What this project requires. Delete a line only for the prototype profile (a gate change).
-#   checker: the verdict check fails if TEAM_CHECKER isn't set
+# What this project requires. Nothing while it is a prototype. When it moves up to internal or
+# production, turn these on by removing the "# " (a gate change, so the owner approves it):
+#   checker: the verdict check fails if TEAM_CHECKER isn't set (needs Vera's checker App)
 #   lint:    the quality gate fails if LINT_CMD is "none"
+#   cap:     the limits check fails if the ticket's issue has no cap from the Budget Analyst
 require:
-  - checker
-  # lint: added back at foundation once the stack and LINT_CMD exist
+  # - checker
+  # - lint
+  # - cap
 
 # Gate files: CI, agent rules and role files, the autonomy stage (TEAM.md), lint and type
 # config, test-runner config, the command surface, this file. Any change needs the owner's
