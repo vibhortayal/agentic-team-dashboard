@@ -205,6 +205,7 @@ const EVIDENCE = /^\W*(Rows|Revision|Files|Command|Expected \/ actual|Repro)\s*:
 export function plainMessage(body: string, max = ASK_MAX): string {
   let text = (body || "")
     .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/<\/?[A-Za-z][^>]*>/g, "")
     .replace(/```[\s\S]*?```/g, "")
     .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
     .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1");
@@ -234,8 +235,9 @@ function previewFor(item: GhItem, events: Array<[GhComment, TeamEvent]>, app: Ap
   return url;
 }
 
-function isProduction(env: string): boolean {
-  return /^prod(uction)?$/i.test(env.trim());
+/** "production", "prod", "Production – my-app" (Vercel) or "github-pages". */
+export function isProduction(env: string): boolean {
+  return /^(prod(uction)?\b.*|github-pages)$/i.test(env.trim());
 }
 
 export function buildApp(app: AppData): AppView {

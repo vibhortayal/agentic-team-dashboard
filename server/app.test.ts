@@ -106,7 +106,7 @@ describe("AC5 optional reads", () => {
     const calls = await fake((p) => {
       if (p.endsWith("/releases")) return [200, [{ tag_name: "v1", published_at: "2026-11-12T00:00:00Z" }]];
       if (p.endsWith("/deployments")) return [200, deps];
-      if (p.endsWith("/pulls")) return [200, [{ number: 4, head: { ref: "b", sha: "c" } }]];
+      if (p.endsWith("/pulls")) return [200, [{ number: 4, head: { ref: "main", sha: "c" } }]];
       const m = /deployments\/(\d+)\/statuses$/.exec(p);
       if (m) return [200, [{ state: "success", environment_url: `https://d${m[1]}.example.com`, created_at: "2026-11-12T12:00:00Z" }]];
       return [404, {}];
@@ -114,7 +114,7 @@ describe("AC5 optional reads", () => {
     const app = await readApp("o/r", null, 1);
     expect(calls.length).toBeLessThanOrEqual(10);
     expect(app.releases).toHaveLength(1);
-    expect(app.pulls).toEqual([{ number: 4, head_ref: "b", head_sha: "c" }]);
+    expect(app.pulls).toEqual([{ number: 4, head_ref: "main", head_sha: "c" }]);
     expect(app.deployments.map((d) => d.url)).toContain("https://d19.example.com");
     expect(app.deployments.every((d) => d.ok)).toBe(true);
   });

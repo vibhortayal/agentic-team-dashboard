@@ -4,7 +4,7 @@
 // if it is installed and signed in. Nothing is ever written.
 
 import { execFileSync } from "node:child_process";
-import type { AppData, Deploy, GhComment, GhItem, GhRelease, PullHead } from "./model.ts";
+import { isProduction, type AppData, type Deploy, type GhComment, type GhItem, type GhRelease, type PullHead } from "./model.ts";
 
 /** GitHub couldn't be read. The message is a plain sentence for the page. */
 export class CantRead extends Error {}
@@ -149,16 +149,15 @@ export async function readApp(repo: string, token: string | null, openPulls: num
     ? (await optional<Array<{ number: number; head?: { ref?: string; sha?: string } }>>(`/repos/${repo}/pulls?state=open&per_page=100`, token, []))
         .map((p): PullHead => ({ number: p.number, head_ref: p.head?.ref ?? "", head_sha: p.head?.sha ?? "" }))
     : [];
-  // Newest first; keep the newest few per environment so the status reads stay small.
+  // Read statuses only for deployments the board can use: the newest production ones first,
+  // then the newest ones for each open pull request, within STATUS_READS.
+  const newest = [...(Array.isArray(raw) ? raw : [])].sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""));
   const picked: GhDeployment[] = [];
-  const perEnv = new Map<string, number>();
-  for (const d of [...(Array.isArray(raw) ? raw : [])].sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""))) {
-    const env = d.environment ?? "";
-    const n = perEnv.get(env) ?? 0;
-    if (n >= 2 || picked.length >= STATUS_READS) continue;
-    perEnv.set(env, n + 1);
-    picked.push(d);
-  }
+  const take = (list: GhDeployment[], n: number) => {
+    for (const d of list.slice(0, n)) if (picked.length < STATUS_READS && !picked.includes(d)) picked.push(d);
+  };
+  take(newest.filter((d) => isProduction(d.environment ?? "")), 2);
+  for (const p of pulls) take(newest.filter((d) => !isProduction(d.environment ?? "") && ((p.head_ref && d.ref === p.head_ref) || (p.head_sha && d.sha === p.head_sha))), 2);
   const deployments: Deploy[] = [];
   for (const d of picked) {
     const st = (await optional<GhDeployStatus[]>(`/repos/${repo}/deployments/${d.id}/statuses?per_page=1`, token, []))[0];
