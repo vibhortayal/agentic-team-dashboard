@@ -11,7 +11,7 @@ import { demoData, insideApp, pageBuilt, pageFile } from "./assets.ts";
 import { clientId, installUrl, pollSignIn, refresh, startSignIn } from "./auth.ts";
 import * as config from "./config.ts";
 import { CantRead, findToken, listProjects, readApp, readProject, REPO_NAME, repoFromGit } from "./github.ts";
-import { DEMO_SETTINGS, readSettings, saveSetting, SaveRefused } from "./settings.ts";
+import { DEMO_SETTINGS, readSettings, saveSetting, SaveRefused, TOO_LONG } from "./settings.ts";
 import { buildBoard, errorBoard, NO_APP_DATA, type AppData, type Board, type GhComment, type GhItem } from "./model.ts";
 
 const CACHE_MS = 60_000; // read GitHub at most once a minute
@@ -122,12 +122,17 @@ export class Source {
 
 interface Pending { device_code: string; interval: number; until: number; next: number }
 
+class TooBig extends Error {}
+
 async function readJson(req: IncomingMessage): Promise<Record<string, unknown>> {
   let body = "";
+  let big = false;
   for await (const chunk of req) {
-    body += chunk;
-    if (body.length > 10_000) throw new Error("too big");
+    // Read to the end even when it's too big, so the next request on this connection still works.
+    if (!big) body += chunk;
+    if (body.length > 20_000) { big = true; body = ""; }
   }
+  if (big) throw new TooBig();
   const data: unknown = body ? JSON.parse(body) : {};
   return data && typeof data === "object" ? (data as Record<string, unknown>) : {};
 }
@@ -162,8 +167,8 @@ export function makeServer(source: Source, port: number, onStop: () => void = ()
       let body: Record<string, unknown>;
       try {
         body = await readJson(req);
-      } catch {
-        return json(400, { error: "That request didn't make sense." });
+      } catch (e) {
+        return json(e instanceof TooBig ? 413 : 400, { error: e instanceof TooBig ? TOO_LONG : "That request didn't make sense." });
       }
       if (session.demo && path !== "/api/stop") return json(400, { error: "The demo can't sign in, change project or save settings." });
 

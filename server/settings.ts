@@ -15,6 +15,7 @@ export const LIST_FILE = "team-settings.json";
 export const CHECK_SETTINGS = new Set(["TEAM_OWNER", "TEAM_CHECKER", "TEAM_RECEIPTS", "LINT_CMD", "SETUP_CMD", "DOCS_BUDGET"]);
 const NAME = /^(?!GITHUB_)[A-Z_][A-Z0-9_]{0,99}$/;
 export const MAX_VALUE = 8_000;
+export const TOO_LONG = "That's too long to be a key. Check you copied the right thing.";
 
 export interface Wanted {
   name: string;
@@ -119,18 +120,29 @@ async function readList(repo: string, token: string | null): Promise<{ wanted: W
   return parseList(Buffer.from(content, "base64").toString("utf8"));
 }
 
+/** Every page of a list (GitHub gives at most 30 variables or 100 secrets a page), or the status that stopped it. */
+async function all<T>(path: string, key: string, per: number, token: string | null): Promise<T[] | number> {
+  const out: T[] = [];
+  for (let page = 1; page <= 20; page++) {
+    const r = await look(`${path}?per_page=${per}&page=${page}`, token);
+    if (r.status !== 200) return r.status;
+    const got = ((r.data as Record<string, unknown> | null)?.[key] ?? []) as T[];
+    out.push(...got);
+    if (got.length < per) break;
+  }
+  return out;
+}
+
 async function readCurrent(repo: string, token: string | null): Promise<Current | string> {
-  const vars = await look(`/repos/${repo}/actions/variables?per_page=30`, token);
-  const secs = await look(`/repos/${repo}/actions/secrets?per_page=100`, token);
-  if (vars.status === 401 || secs.status === 401) return "Your GitHub sign-in didn't work. Ask Ella to help you sign in again.";
-  if (!(vars.status === 200 && secs.status === 200)) return vars.status === 403 || secs.status === 403 || vars.status === 404 || secs.status === 404
+  const vars = await all<{ name: string; value: string; updated_at: string }>(`/repos/${repo}/actions/variables`, "variables", 30, token);
+  const secs = await all<{ name: string; updated_at: string }>(`/repos/${repo}/actions/secrets`, "secrets", 100, token);
+  if (vars === 401 || secs === 401) return "Your GitHub sign-in didn't work. Ask Ella to help you sign in again.";
+  if (typeof vars === "number" || typeof secs === "number") return [vars, secs].some((s) => s === 403 || s === 404)
     ? NO_PERMISSION : "GitHub had a problem just now. Try again in a minute.";
   const variables = new Map<string, { value: string; updated_at: string }>();
-  for (const v of (vars.data as { variables?: Array<{ name: string; value: string; updated_at: string }> }).variables ?? []) {
-    variables.set(v.name.toUpperCase(), { value: v.value, updated_at: v.updated_at });
-  }
+  for (const v of vars) variables.set(v.name.toUpperCase(), { value: v.value, updated_at: v.updated_at });
   const secrets = new Map<string, string>();
-  for (const s of (secs.data as { secrets?: Array<{ name: string; updated_at: string }> }).secrets ?? []) secrets.set(s.name.toUpperCase(), s.updated_at);
+  for (const s of secs) secrets.set(s.name.toUpperCase(), s.updated_at);
   return { variables, secrets };
 }
 
@@ -168,7 +180,7 @@ export async function saveSetting(repo: string, token: string, name: string, typ
   } else {
     value = typed.trim();
     if (!value) throw new SaveRefused("The box is empty. Paste the value first.");
-    if (value.length > MAX_VALUE) throw new SaveRefused("That's too long to be a key. Check you copied the right thing.");
+    if (value.length > MAX_VALUE) throw new SaveRefused(TOO_LONG);
   }
 
   const refuse = (status: number): never => {

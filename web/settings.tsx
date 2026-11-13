@@ -66,7 +66,7 @@ function Row({ s, demo, onSaved }: { s: SettingView; demo: boolean; onSaved: () 
               <label htmlFor={id}>{s.kind === "secret" ? "Paste the key here" : "Type the value"}</label>
               <div>
                 <input id={id} type={s.kind === "secret" ? "password" : "text"} value={typed} onChange={(e) => setTyped(e.target.value)}
-                  autoComplete="off" spellCheck={false} disabled={demo || busy} />
+                  autoComplete="off" spellCheck={false} maxLength={8000} disabled={demo || busy} />
                 <button type="submit" className="primary" disabled={demo || busy || !typed.trim()}>{busy ? "Saving…" : "Save"}</button>
               </div>
               {s.can_make && <button type="button" className="link" disabled={demo || busy} onClick={() => void save(true)}>Make one for me</button>}
