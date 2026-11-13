@@ -1,6 +1,7 @@
 // Draws the board from /api/board. React escapes every piece of text, so nothing is shown as HTML.
 import { useCallback, useEffect, useState } from "react";
 import type { AppView, Board, Card, Column, Version } from "../server/model.ts";
+import { Settings } from "./settings.tsx";
 import { PickProject, postJson, SignIn, type Status } from "./setup.tsx";
 
 const FACE_CLASS: Record<string, string> = {
@@ -124,6 +125,7 @@ export function App() {
   const [status, setStatus] = useState<Status | null>(null);
   const [stopped, setStopped] = useState(false);
   const [picking, setPicking] = useState(false);
+  const [settings, setSettings] = useState(false);
 
   const check = useCallback(async () => {
     try {
@@ -141,9 +143,11 @@ export function App() {
   if (!status.demo && (!status.repo || picking)) {
     return <Shell title="Welcome"><PickProject status={status} onDone={() => { setPicking(false); void check(); }} /></Shell>;
   }
+  if (settings) return <Settings demo={status.demo} onBack={() => setSettings(false)} />;
   return (
     <BoardView
       status={status}
+      onSettings={() => setSettings(true)}
       onChangeProject={() => setPicking(true)}
       onSignOut={async () => { await postJson("/api/signout"); void check(); }}
       onStop={async () => { await postJson("/api/stop").catch(() => null); setStopped(true); }}
@@ -156,13 +160,13 @@ function Shell({ title, children }: { title: string; children?: React.ReactNode 
     <>
       <header className="top"><div><p className="eyebrow">Your project board</p><h1>{title}</h1></div></header>
       <main>{children}</main>
-      <footer className="foot">This board only reads your project. It changes nothing and runs on your computer.</footer>
+      <footer className="foot">The board runs on your computer. It changes your project only when you save a setting.</footer>
     </>
   );
 }
 
-function BoardView({ status, onChangeProject, onSignOut, onStop }: {
-  status: Status; onChangeProject: () => void; onSignOut: () => void; onStop: () => void;
+function BoardView({ status, onSettings, onChangeProject, onSignOut, onStop }: {
+  status: Status; onSettings: () => void; onChangeProject: () => void; onSignOut: () => void; onStop: () => void;
 }) {
   const [board, setBoard] = useState<Board | null>(null);
   const [busy, setBusy] = useState(false);
@@ -202,13 +206,14 @@ function BoardView({ status, onChangeProject, onSignOut, onStop }: {
           <span aria-live="polite">{board ? `Last checked ${ago(board.updated, nowMs)}` : ""}</span>
           <button type="button" onClick={() => void load()} disabled={busy}>{busy ? "Checking…" : "Check now"}</button>
         </div>
-        {!status.demo && (
-          <nav className="actions">
+        <nav className="actions">
+          <button type="button" className="link" onClick={onSettings}>Settings and keys</button>
+          {!status.demo && <>
             <button type="button" className="link" onClick={onChangeProject}>Change project</button>
             {status.saved_sign_in && <button type="button" className="link" onClick={onSignOut}>Sign out</button>}
             {status.inside_app && <button type="button" className="link" onClick={onStop}>Stop the board</button>}
-          </nav>
-        )}
+          </>}
+        </nav>
       </header>
 
       <main>
@@ -248,7 +253,7 @@ function BoardView({ status, onChangeProject, onSignOut, onStop }: {
         </section>
       </main>
 
-      <footer className="foot">This board only reads your project. It changes nothing and runs on your computer.</footer>
+      <footer className="foot">The board runs on your computer. It changes your project only when you save a setting.</footer>
     </>
   );
 }

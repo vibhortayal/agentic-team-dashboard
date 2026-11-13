@@ -60,7 +60,7 @@ export function SignIn({ status, onDone }: { status: Status; onDone: () => void 
   return (
     <section className="setup">
       <h2>Sign in with GitHub</h2>
-      <p>Your project lives on GitHub. The board only reads it. It can't change anything.</p>
+      <p>Your project lives on GitHub. The board reads it, and changes it only when you save a setting.</p>
       {!code && <button type="button" className="primary" onClick={() => void start()}>Sign in with GitHub</button>}
       {code && (
         <ol className="steps">
