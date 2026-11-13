@@ -4,7 +4,7 @@
 // what the page draws. No network here, so it is easy to test.
 // The contract this reads is .team/docs/github-state.md.
 
-import { maskTree } from "./redact.ts";
+import { mask, maskTree } from "./redact.ts";
 
 export interface GhLabel { name?: string }
 export interface GhItem {
@@ -198,14 +198,17 @@ export function teamComments(comments: GhComment[]): Array<[GhComment, TeamEvent
 }
 
 const ASK_MAX = 600;
+// Real HTML tags only, so "Press <Enter>" or "a<b and c>d" stay as written.
+const HTML_TAG = /<\/?(?:a|abbr|b|blockquote|br|code|dd|del|details|div|dl|dt|em|h[1-6]|hr|i|img|ins|kbd|li|ol|p|picture|pre|q|s|samp|source|span|strong|sub|summary|sup|table|tbody|td|th|thead|tr|tt|u|ul|var)\b[^<>]*>/g;
 // The evidence line's fields are for the team, not for the person trying the app.
 const EVIDENCE = /^\W*(Rows|Revision|Files|Command|Expected \/ actual|Repro)\s*:/i;
 
 /** A comment as plain text for a non-coder: no team header, hidden data, Markdown marks or code. */
 export function plainMessage(body: string, max = ASK_MAX): string {
-  let text = (body || "")
+  // Mask first: cleaning removes marks such as "_" that are part of a key's shape.
+  let text = mask(body || "")
     .replace(/<!--[\s\S]*?-->/g, "")
-    .replace(/<\/?[A-Za-z][^>]*>/g, "")
+    .replace(HTML_TAG, "")
     .replace(/```[\s\S]*?```/g, "")
     .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
     .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1");
@@ -215,7 +218,7 @@ export function plainMessage(body: string, max = ASK_MAX): string {
   if (first >= 0 && /[·→]/.test(lines[first])) lines.splice(first, 1);
   text = lines
     .filter((l) => !EVIDENCE.test(l))
-    .map((l) => l.replace(/^[-*+]\s+/, "• ").replace(/^#+\s*/, "").replace(/^>\s?/, "").replace(/[*_`]/g, "").replace(/^---+$/, ""))
+    .map((l) => l.replace(/^[-*+]\s+/, "• ").replace(/^#+\s*/, "").replace(/^>\s?/, "").replace(/[*`]/g, "").replace(/(^|[^\w])_+|_+(?=[^\w]|$)/g, "$1").replace(/^---+$/, ""))
     .join("\n").replace(/\n{3,}/g, "\n\n").trim();
   return text.length > max ? text.slice(0, max - 1).trimEnd() + "…" : text;
 }
@@ -237,7 +240,7 @@ function previewFor(item: GhItem, events: Array<[GhComment, TeamEvent]>, app: Ap
 
 /** "production", "prod", "Production – my-app" (Vercel) or "github-pages". */
 export function isProduction(env: string): boolean {
-  return /^(prod(uction)?\b.*|github-pages)$/i.test(env.trim());
+  return /^(prod(uction)?(\s+[–-]\s+.+)?|github-pages)$/i.test(env.trim());
 }
 
 export function buildApp(app: AppData): AppView {

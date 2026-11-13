@@ -107,7 +107,9 @@ export class Source {
     try {
       const token = await this.session.token();
       const { items, comments } = await readProject(repo, token);
-      const app = await readApp(repo, token, items.filter((i) => i.pull_request !== undefined && i.state === "open").length);
+      const openPulls = items.filter((i) => i.pull_request !== undefined && i.state === "open");
+      const waiting = openPulls.filter((i) => (i.labels ?? []).some((l) => (typeof l === "string" ? l : l.name) === "needs-human")).map((i) => i.number);
+      const app = await readApp(repo, token, openPulls.length, waiting);
       return buildBoard(repo, items, comments, now(), null, app);
     } catch (e) {
       const msg = e instanceof CantRead ? e.message : "The board couldn't read your project just now. It will try again soon.";

@@ -142,22 +142,30 @@ async function optional<T>(path: string, token: string | null, empty: T): Promis
 const STATUS_READS = 6;
 
 /** The app's versions (releases) and its live and preview links (deployments). Never throws. */
-export async function readApp(repo: string, token: string | null, openPulls: number): Promise<AppData> {
+export async function readApp(repo: string, token: string | null, openPulls: number, waiting: number[] = []): Promise<AppData> {
   const releases = await optional<GhRelease[]>(`/repos/${repo}/releases?per_page=10`, token, []);
   const raw = await optional<GhDeployment[]>(`/repos/${repo}/deployments?per_page=30`, token, []);
   const pulls = openPulls
     ? (await optional<Array<{ number: number; head?: { ref?: string; sha?: string } }>>(`/repos/${repo}/pulls?state=open&per_page=100`, token, []))
         .map((p): PullHead => ({ number: p.number, head_ref: p.head?.ref ?? "", head_sha: p.head?.sha ?? "" }))
     : [];
-  // Read statuses only for deployments the board can use: the newest production ones first,
-  // then the newest ones for each open pull request, within STATUS_READS.
+  // Status reads go where the board shows a link, in turn: the newest live deployment, then the
+  // newest preview of each change waiting for the person, then second tries, then other changes.
   const newest = [...(Array.isArray(raw) ? raw : [])].sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""));
+  const previewsOf = (p: PullHead) => newest.filter((d) => !isProduction(d.environment ?? "") &&
+    ((p.head_ref && d.ref === p.head_ref) || (p.head_sha && d.sha === p.head_sha)));
+  const live = newest.filter((d) => isProduction(d.environment ?? ""));
+  const waitingPulls = pulls.filter((p) => waiting.includes(p.number));
+  const otherPulls = pulls.filter((p) => !waiting.includes(p.number));
+  const order: GhDeployment[] = [
+    ...live.slice(0, 1),
+    ...waitingPulls.map((p) => previewsOf(p)[0]),
+    ...live.slice(1, 2),
+    ...waitingPulls.map((p) => previewsOf(p)[1]),
+    ...otherPulls.map((p) => previewsOf(p)[0]),
+  ].filter((d): d is GhDeployment => d !== undefined);
   const picked: GhDeployment[] = [];
-  const take = (list: GhDeployment[], n: number) => {
-    for (const d of list.slice(0, n)) if (picked.length < STATUS_READS && !picked.includes(d)) picked.push(d);
-  };
-  take(newest.filter((d) => isProduction(d.environment ?? "")), 2);
-  for (const p of pulls) take(newest.filter((d) => !isProduction(d.environment ?? "") && ((p.head_ref && d.ref === p.head_ref) || (p.head_sha && d.sha === p.head_sha))), 2);
+  for (const d of order) if (picked.length < STATUS_READS && !picked.includes(d)) picked.push(d);
   const deployments: Deploy[] = [];
   for (const d of picked) {
     const st = (await optional<GhDeployStatus[]>(`/repos/${repo}/deployments/${d.id}/statuses?per_page=1`, token, []))[0];
