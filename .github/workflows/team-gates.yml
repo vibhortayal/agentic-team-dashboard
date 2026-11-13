@@ -41,6 +41,7 @@ jobs:
       BASE: ${{ github.event.pull_request.base.sha }}
       HEAD: ${{ github.event.pull_request.head.sha }}
       BRANCH: ${{ github.event.pull_request.head.ref }}
+      PR_BODY: ${{ github.event.pull_request.body }}   # read by the script for a "Team branch:" line; never run
       PR_NUMBER: ${{ github.event.pull_request.number }}
       TEAM_OWNER: ${{ vars.TEAM_OWNER }}
       TEAM_CHECKER: ${{ vars.TEAM_CHECKER }}

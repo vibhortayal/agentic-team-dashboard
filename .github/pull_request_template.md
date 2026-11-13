@@ -1,5 +1,7 @@
 Closes #<issue>
 
+<!-- Only if your tool chose the branch name: Team branch: team/<issue>-<slug> -->
+
 ## What changed
 One or two sentences.
 
