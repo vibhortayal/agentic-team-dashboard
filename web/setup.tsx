@@ -158,17 +158,15 @@ export function PickProject({ status, first, onDone }: { status: Status; first: 
       {team.length > 0 && status.install_url && (
         <p>Project missing? <a href={safe(status.install_url)} target="_blank" rel="noopener">Let the board see it on GitHub</a>, then come back here.</p>
       )}
-      {(others.length > 0 || all) && (
-        <details className="all" open={all} onToggle={(e) => setAll((e.target as HTMLDetailsElement).open)}>
-          <summary>Show all your projects{others.length ? ` (${others.length} more)` : ""}</summary>
-          <p className="help">These don't use the team, so the board has little to show for them.</p>
-          {list(others)}
+      <details className="all" open={all} onToggle={(e) => setAll((e.target as HTMLDetailsElement).open)}>
+        <summary>Show all your projects{others.length ? ` (${others.length} more)` : ""}</summary>
+        {others.length > 0 && <p className="help">These don't use the team, so the board has little to show for them.</p>}
+        {others.length > 0 && list(others)}
           <form onSubmit={(e) => { e.preventDefault(); void choose(typed); }} className="typed">
             <label htmlFor="repo">Or type its name, like <i>your-name/your-app</i></label>
             <div><input id="repo" value={typed} onChange={(e) => setTyped(e.target.value)} autoComplete="off" /><button type="submit">Show it</button></div>
           </form>
         </details>
-      )}
       {problem && <p className="problem-line">{problem}</p>}
     </section>
   );
