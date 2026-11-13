@@ -1,39 +1,131 @@
-{"issue": 11, "rev": "4c85eeb645cf5ceea7565455df0e4a65b0b14fc3", "base": "8f48f84", "verdict": "BLOCK", "round": 1,
- "spec": "docs/changes/11.md v1 at 4c85eeb",
+{
+ "issue": 11,
+ "rev": "2bbc580",
+ "base": "8f48f84",
+ "verdict": "BLOCK",
+ "round": 2,
+ "spec": "docs/changes/11.md v1 at 4c85eeb (unchanged at 2bbc580)",
+ "previous": {
+  "round": 1,
+  "verdict": "BLOCK",
+  "rev": "4c85eeb",
+  "evidence": "aba0e47"
+ },
  "checks": [
-  {"id": "AC1", "spec": "docs/changes/11.md#AC1", "command": "node verification/11/checks/ac1_try_it.mjs; NODE_PATH=$(npm root -g) node verification/11/page.mjs", "result": "fail", "finding": "F1"},
-  {"id": "AC1-https", "spec": "docs/changes/11.md#AC1", "command": "verification/11/page.mjs (http, javascript: links)", "result": "pass"},
-  {"id": "AC2", "spec": "docs/changes/11.md#AC2", "command": "node verification/11/checks/ac2_ask.mjs; verification/11/page.mjs", "result": "fail", "finding": "F2"},
-  {"id": "AC3", "spec": "docs/changes/11.md#AC3", "command": "node verification/11/checks/ac3_your_app.mjs; verification/11/page.mjs", "result": "pass"},
-  {"id": "AC4", "spec": "docs/changes/11.md#AC4", "command": "verification/11/page.mjs (every a[href] on the board view: full board, http links, nothing online, can't-read message, demo)", "result": "pass"},
-  {"id": "AC5", "spec": "docs/changes/11.md#AC5", "command": "node verification/11/checks/ac5_optional.mjs", "result": "pass"},
-  {"id": "AC6", "spec": "docs/changes/11.md#AC6", "command": "bash .github/team/run-checks.sh (verification/8/checks, verification/10/checks); NODE_PATH=$(npm root -g) node verification/10/shots.mjs (33 ok)", "result": "pass"},
-  {"id": "NFR-reads", "spec": "docs/changes/11.md#7", "command": "node verification/11/checks/ac5_optional.mjs", "result": "pass"},
-  {"id": "screens", "spec": "docs/changes/11.md#6", "command": "verification/11/page.mjs: 16 screenshots (board, notyet, error, demo x phone/desktop x light/dark)", "result": "pass"},
-  {"id": "BUILDER-TESTS", "spec": "server/*.test.ts", "command": "npm test (62 passed); npm run typecheck (exit 0)", "result": "pass"}
+  {
+   "id": "F1-repro",
+   "spec": "docs/changes/11.md#AC1",
+   "command": "node verification/11/checks/ac1_try_it.mjs (15/15)",
+   "result": "pass"
+  },
+  {
+   "id": "F2-repro",
+   "spec": "docs/changes/11.md#AC2",
+   "command": "node verification/11/checks/ac2_ask.mjs (23/23)",
+   "result": "pass"
+  },
+  {
+   "id": "AC1",
+   "spec": "docs/changes/11.md#AC1",
+   "command": "node verification/11/checks/ac1_try_it.mjs; node verification/11/checks/ac1_other_pulls.mjs (8/10)",
+   "result": "fail",
+   "finding": "F1"
+  },
+  {
+   "id": "AC1-https",
+   "spec": "docs/changes/11.md#AC1",
+   "command": "verification/11/page.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC2",
+   "spec": "docs/changes/11.md#AC2",
+   "command": "node verification/11/checks/ac2_ask.mjs; node verification/11/checks/ac2_masked.mjs (5/10); verification/11/page.mjs",
+   "result": "fail",
+   "finding": "F3"
+  },
+  {
+   "id": "AC3",
+   "spec": "docs/changes/11.md#AC3",
+   "command": "node verification/11/checks/ac3_your_app.mjs (19/19); verification/11/page.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC4",
+   "spec": "docs/changes/11.md#AC4",
+   "command": "verification/11/page.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC5",
+   "spec": "docs/changes/11.md#AC5",
+   "command": "node verification/11/checks/ac5_optional.mjs (29/29)",
+   "result": "pass"
+  },
+  {
+   "id": "AC6",
+   "spec": "docs/changes/11.md#AC6",
+   "command": "bash .github/team/run-checks.sh (verification/8/checks, verification/10/checks all pass)",
+   "result": "pass"
+  },
+  {
+   "id": "NFR-reads",
+   "spec": "docs/changes/11.md#7",
+   "command": "ac5_optional.mjs, ac1_other_pulls.mjs: 6 status reads, 9 reads per refresh",
+   "result": "pass"
+  },
+  {
+   "id": "screens",
+   "spec": "docs/changes/11.md#6",
+   "command": "verification/11/page.mjs: all ok, 16 screenshots",
+   "result": "pass"
+  },
+  {
+   "id": "BUILDER-TESTS",
+   "spec": "server/*.test.ts",
+   "command": "npm test (62 passed); npm run typecheck (exit 0)",
+   "result": "pass"
+  }
  ],
  "findings": [
-  {"id": "F1", "clause": "AC1 A waiting change shows a \"Try it\" button that opens its preview: the latest successful non-production deployment whose branch or commit matches the pull request",
-   "where": "server/github.ts:158 (only the 2 newest deployments per environment get a status read, whichever branch they belong to)",
-   "repro": "one waiting PR (branch feat/seeds) with a successful Preview deployment on day 10, then Preview deployments of feat/a (day 11) and feat/b (day 12): /api/board needed[PR].try_url is null and the card has no Try it",
-   "expected": "try_url is the feat/seeds preview (3 deployments, 1 waiting change: well inside the 6 status reads section 7 allows)",
-   "script": "verification/11/checks/ac1_try_it.mjs"},
-  {"id": "F2", "clause": "AC2 Each \"Waiting for you\" card shows the message that asked, in plain text: no Markdown marks, ... no hidden data",
-   "where": "server/model.ts:205-221 plainMessage removes HTML comments but not HTML tags",
-   "repro": "asking comment body ending \"<details><summary>More</summary>hidden html</details>\": card.ask (and the card on the page) shows the tags literally",
-   "expected": "no HTML tags in the ask (the words may stay or go; the collapsed part is hidden on GitHub)",
-   "script": "verification/11/checks/ac2_ask.mjs"}
+  {
+   "id": "F1",
+   "status": "still open (round 1's repro passes; the same clause fails in two new cases)",
+   "clause": "AC1 A waiting change shows a \"Try it\" button that opens its preview: the latest successful non-production deployment whose branch or commit matches the pull request",
+   "where": "server/github.ts:159-160: up to 2 status reads per open pull request, in GitHub's order, for every open pull request, waiting or not",
+   "repro": "(a) one waiting PR #40 (feat/seeds, preview day 5) and three newer open PRs that aren't waiting, each with 2 previews, plus a production deployment: the 6 status reads go to production and #43/#42's previews, #40 gets try_url null. (b) three waiting PRs, each with 2 successful previews, and 2 production deployments: #40 gets try_url null",
+   "expected": "every waiting change has its preview: (a) needs 2 status reads, (b) needs 5, both inside section 7's 6",
+   "script": "verification/11/checks/ac1_other_pulls.mjs"
+  },
+  {
+   "id": "F3",
+   "status": "new this round; present since 4c85eeb, missed in round 1 because that row compared the whole key only",
+   "clause": "AC2 Each \"Waiting for you\" card shows the message that asked, in plain text: ... masked",
+   "where": "server/model.ts:218 plainMessage removes every _ (as an emphasis mark) before maskTree runs (model.ts:336), so ghp_..., github_pat_..., npm_..., sk_live_..., sbp_... no longer match server/redact.ts's shapes. Release notes (model.ts:250) go the same way",
+   "repro": "asking comment \"Sign in with ghp_<36 chars> and tell me if it works.\": card.ask is \"Sign in with ghpQ7vX2...uio and tell me if it works.\" (the whole key minus the _)",
+   "expected": "\"Sign in with [hidden: github token] and tell me if it works.\"",
+   "script": "verification/11/checks/ac2_masked.mjs"
+  }
+ ],
+ "fixed": [
+  {
+   "id": "F2",
+   "note": "HTML tags are gone from the ask (ac2_ask.mjs 23/23, page.mjs)."
+  },
+  {
+   "id": "F1 round-1 repro",
+   "note": "1 waiting change with 2 newer previews of other branches now gets its Try it (ac1_try_it.mjs 15/15)."
+  }
  ],
  "notes": [
-  "Check was not separate: the Verifier ran in the same account as the builder (prototype profile, no TEAM_CHECKER), so there is no checker approval and no verified label.",
-  "F1 also shows at load: with 3 waiting pull requests, each with a preview, only 2 got Try it (ac5_optional.mjs note). Matching deployments to the waiting pull requests' branches and commits before spending the 6 status reads would fix both.",
-  "Production is recognised only by the environment's name (server/model.ts:237, ^prod(uction)?$). A deployment GitHub marks production_environment: true under another name (GitHub Pages' 'github-pages', Vercel's 'Production – <project>') gives no 'Open your app'. The spec doesn't define production, so a note.",
-  "Only a status's environment_url counts (server/github.ts:165). A host that sets only target_url gives no link. Spec silent; note.",
-  "The data still carries http:// and javascript: addresses in try_url and live_url; the page draws a link only for https (web/App.tsx:12 safeUrl, :35 AppLink), so nothing reaches the person. Filtering in the server too would be safer.",
-  "AC3 'with its date' is shown as relative time ('37 days ago') with the exact date in <time datetime>. Prereleases are left out of the versions.",
-  "Cards that aren't waiting also show Try it when they have a preview (web/App.tsx:100). Not asked for, not forbidden.",
-  "The new GitHub reads run one after another (up to 9 per refresh, server/github.ts readApp). Inside the one-minute cache; the 50-item load check of #8 still passes.",
-  "server/app.test.ts is a new test file; no existing test was changed.",
-  "Tamper check: git diff 7b1a653 4c85eeb -- verification/ is empty."
+  "Check was not separate: the Verifier ran in the same account as the builder (prototype profile, no TEAM_CHECKER), so no checker approval and no verified label.",
+  "server/app.test.ts change: the fake pull's branch moved from \"b\" to \"main\", the branch every fake deployment is on. Under the new design only previews of an open pull request get a status read, so with \"b\" no preview is read. The assertions (at most 10 reads, d19's link, all ok) are unchanged. Not loosened, and the file is new in #11, so it isn't an existing test. It no longer has a case where previews of other branches are newer; ac1_try_it.mjs and ac1_other_pulls.mjs cover that.",
+  "Production names (server/model.ts:239): 'Production – my-app' and 'github-pages' now count. So do 'production-preview', 'Prod-preview' and 'prod staging' (prod followed by a word break). Spec doesn't define production; note.",
+  "HTML tag stripping (server/model.ts:208) also takes out words in angle brackets that aren't tags: \"Press <Enter> to save. If a<b and c>d then ok.\" becomes \"Press  to save. If ad then ok.\" Spec silent; note.",
+  "Unchanged from round 1: http:// and javascript: addresses still reach try_url and live_url in the data; the page shows only https links. Only environment_url counts, not target_url.",
+  "Read count: 9 reads per refresh with 3 waiting changes and 20 deployments; refreshes inside the minute read none (ac5_optional.mjs).",
+  "Baseline: #8 and #10 checks pass at head; base 8f48f84 unchanged since round 1, not rerun.",
+  "Tamper check: git diff aba0e47 2bbc580 -- verification/ is empty."
  ],
- "evidence": "verification/11/"}
+ "evidence": "verification/11/"
+}

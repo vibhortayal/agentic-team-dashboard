@@ -1,64 +1,62 @@
 # Verification of #11 (board for app testers)
 
-Round 1: **BLOCK** on `4c85eeb`. The spec is `docs/changes/11.md` v1 at that commit, and the base is `8f48f84`.
+Round 2: **BLOCK** on `2bbc580`. Round 1 was BLOCK on `4c85eeb` (evidence `aba0e47`). The spec is `docs/changes/11.md` v1 at `4c85eeb`, unchanged since, and the base is `8f48f84`.
 
 The Verifier ran in the same account as the builder (prototype profile, no checker identity). The check was not separate, and there is no checker approval.
 
 Rows and how each one is checked: `checks.md`. Per-row results and notes: `verdict.json`. The page checks and screenshots: `page.mjs` (by hand, needs Playwright).
 
+## Round 1's findings
+
+- **F2 (HTML tags in the ask): fixed.** `ac2_ask.mjs` 23/23, and the page shows no tags.
+- **F1 (Try it lost to other branches' previews): round 1's repro passes, but the clause still fails.** See below.
+
 ## Findings that block
 
-**F1. AC1: a waiting change loses its Try it button once two newer previews of other branches exist.** AC1 says the button opens "the latest successful non-production deployment whose branch or commit matches the pull request". `server/github.ts:158` reads the status of only the 2 newest deployments per environment, whatever branch they are for. On a project where every push to any branch makes a preview, the waiting change's preview soon drops out, and the card shows no button. That's one waiting change and 3 deployments, well inside the 6 status reads section 7 allows.
+**F1, still open. AC1: a waiting change gets no Try it when other open pull requests use up the status reads.** AC1 says the button opens "the latest successful non-production deployment whose branch or commit matches the pull request". `server/github.ts:159-160` now spends up to 2 status reads on every open pull request in GitHub's order (newest first), whether it is waiting for the person or not. Older waiting changes get none of the 6 reads.
 
 ```
-$ node verification/11/checks/ac1_try_it.mjs
-  ok   AC1 the change's preview is found when 1 newer preview of another branch exists
-  FAIL AC1 the change's preview is found when 2 newer previews of other branches exist (want "https://seeds-new.preview.example", got null)
+$ node verification/11/checks/ac1_other_pulls.mjs
+  FAIL AC1 the one waiting change has Try it when 3 open pull requests that aren't waiting have newer previews (want "https://seeds.preview.example", got null; 6 status reads)
+  FAIL AC1 waiting change #40 of 3 has Try it, its newest preview (got null; 6 status reads)
+AC1 Try it with other open pull requests: 8/10 passed
 ```
 
-With 3 waiting changes that each have a preview, only 2 get the button (`ac5_optional.mjs` note). Picking the deployments that match the waiting pull requests' branches and commits before spending the status reads would fix both.
+The first case needs 2 status reads and the second 5, both inside section 7's 6.
 
-**F2. AC2: HTML tags in the ask are shown as text.** AC2 says the ask is shown "in plain text: no Markdown marks, ... no hidden data". `plainMessage` (`server/model.ts:205`) removes HTML comments but not tags. An asking comment with a collapsed `<details><summary>More</summary>...</details>` block shows those tags on the card.
+**F3, new. AC2: keys with `_` in them are shown on the card.** AC2 says the ask is "masked". `plainMessage` (`server/model.ts:218`) takes out every `_` as an emphasis mark before masking runs (`model.ts:336`). After that a `ghp_`, `github_pat_`, `npm_`, `sk_live_` or `sbp_` key no longer matches its shape, so it reaches the card whole, minus the `_`. Release notes (`model.ts:250`) go the same way. This was in `4c85eeb` too. My round-1 row missed it because it only looked for the whole key, `_` included.
 
 ```
-$ node verification/11/checks/ac2_ask.mjs
-  FAIL AC2 plain text: no HTML tags (GitHub Markdown's <details>, <summary> ...) (got "<details> <summary> </summary> </details>")
+$ node verification/11/checks/ac2_masked.mjs
+  FAIL AC2 masked: a github token (ghp_) in the ask is hidden (got "Sign in with ghpQ7vX2mR9kL4tW8nB3pZ6cY1dH5gJ0fSaEuio and tell me if it works.")
+  ... the same for github_pat_, npm_, sk_live_, sbp_
+AC2 masked keys with _: 5/10 passed
 ```
+
+## The builder's test change
+
+`server/app.test.ts`: the fake pull request's branch went from `b` to `main`, the branch every fake deployment is on. With the new design only an open pull request's previews get a status read, so with `b` none would be read. The assertions (at most 10 reads, d19's link, every link ok) are unchanged. This doesn't loosen anything, and the file is new in #11, so it isn't an existing test.
 
 ## Commands and real output (Node 22.23.4, Linux x64)
 
 ```
+$ npm ci && npx vite build     exit 0, exit 0
 $ npm run typecheck            exit 0
 $ npm test                     Test Files 5 passed (5), Tests 62 passed (62)
-$ time bash .github/team/run-checks.sh
-AC1 one file runs (Linux): 9/9           AC2 npx runs: 10/10
-AC3/AC5 sign in: 32/32                   AC4 pick a project: 20/20
-AC6 only this page can act: 69/69        AC7/section 7 docs and release: 12/12
-AC1 Try it: 14/15                <- F1
-AC2 the ask: 22/23               <- F2
+$ bash .github/team/run-checks.sh
+#10 and #8 checks: all pass (9/9, 10/10, 32/32, 10/10, 20/20, 69/69, 12/12, 39/39, 37/37, 30/30, 17/17, 63/63)
+AC1 Try it: 15/15                AC2 the ask: 23/23
+AC1 Try it with other open pull requests: 8/10   <- F1
+AC2 masked keys with _: 5/10                     <- F3
 AC3 your app: 19/19              AC5/sec 7 optional reads: 29/29
-#8: AC1-AC4 39/39, AC5/read rate 37/37, AC6 30/30, AC7/AC8 17/17, AC9 63/63
-verifier checks: 15 run, FAIL    real 0m23.5s
-$ NODE_PATH=$(npm root -g) node verification/11/page.mjs     all ok, 16 screenshots, no sideways scroll
-$ NODE_PATH=$(npm root -g) node verification/10/shots.mjs    33 ok, 0 FAIL (screenshots not kept)
+verifier checks: 18 run, FAIL
+$ NODE_PATH=$(npm root -g) node verification/11/page.mjs     page.mjs: all ok, 16 screenshots, no sideways scroll
 ```
 
-Selected lines from `page.mjs`:
+Section 7: with 20 deployments and 3 waiting changes, one refresh reads 9 times (releases, deployments, pulls, 6 statuses), and refreshes inside the minute read none.
 
-```
-  ok   AC4 board with cards, Your app and Try it: no link points at github.com (2 links: ["https://seeds.preview.example/","https://garden.example/"])
-  ok   AC1 only https: an http deployment and a javascript: comment preview are not Try it links
-  ok   AC2 the ask is shown in plain text: "What I need\n\nPlease try the new seed list and read the plan.\n\n• Does it load?\n• Is it easy to read?"
-  ok   AC3 the draft shows as "Ready to go live, waiting for your OK"
-  ok   AC3 with none of these it says the app isn't online yet
-  ok   AC4 the can't-read message: no link points at github.com (0 links: [])
-  ok   AC4 demo board: no link points at github.com
-```
-
-Section 7: with 20 deployments and 3 waiting changes, one refresh reads 7 times (releases, deployments, pulls, 4 statuses), and refreshes inside the minute read none.
-
-Tamper check: `git diff 7b1a653 4c85eeb -- verification/` is empty.
+Tamper check: `git diff aba0e47 2bbc580 -- verification/` is empty.
 
 ## Not proved here
 
-How real hosts name their environments. The board treats only an environment named "production" or "prod" as live. GitHub Pages ("github-pages") and Vercel projects named "Production – <project>" get no "Open your app" (see the notes).
+How real hosts name their environments. "Production – <project>" and "github-pages" now count as live, and so do names like "production-preview" (see the notes).
