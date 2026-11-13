@@ -1,10 +1,10 @@
 {
  "issue": 29,
- "rev": "575c0e9",
+ "rev": "99d2d29",
  "base": "5f6b2b6 (origin/main, the merge base)",
- "verdict": "BLOCK",
- "round": 1,
- "spec": "docs/changes/29.md v1 at 575c0e9",
+ "verdict": "PASS",
+ "round": 2,
+ "spec": "docs/changes/29.md v1 (unchanged since 575c0e9)",
  "check_list_commit": "548d7e2",
  "checks": [
   {
@@ -39,39 +39,36 @@
    "id": "AC5-type-box",
    "spec": "docs/changes/29.md#2 (AC2, AC5) and docs/changes/10.md AC4",
    "command": "NODE_PATH=$(npm root -g) node verification/29/f1_type_box.mjs",
-   "result": "fail",
-   "why": "F1: when no project is outside the team ones (every project uses the team, or there are none), there is no 'Show all your projects' and no box to type a project's name"
+   "result": "pass",
+   "why": "F1 fixed: f1_type_box.mjs 2/2; page.mjs F1 row ok"
   },
   {
    "id": "AC5-#8,#10,#11,#16",
    "spec": "docs/changes/29.md#2",
    "command": "bash .github/team/run-checks.sh",
    "result": "pass",
-   "why": "32 run, ok (31 at base, ok)"
+   "why": "32 run, ok, every script all passed (31 at base, ok)"
   },
   {
    "id": "unit+types+build",
    "spec": "docs/changes/29.md#2",
    "command": "npm ci; rm -rf dist dist-server; npm run build; npx tsc --noEmit; npm test",
    "result": "pass",
-   "why": "head: build 0, tsc 0, 79/79 (7 files); base: build 0, tsc 0, 75/75"
+   "why": "head 99d2d29: npm ci 0, clean build 0, tsc 0, 79/79 (7 files); base: build 0, tsc 0, 75/75"
   },
   {
    "id": "screens",
    "spec": "docs/changes/29.md#2",
    "command": "NODE_PATH=$(npm root -g) node verification/29/page.mjs",
    "result": "pass",
-   "why": "40 screenshots (list, list-all, opened, change, none, none-app, all-team, loading, error at 390 and 1280, light and dark), no sideways scroll"
-  }
- ],
- "findings": [
+   "why": "40 screenshots retaken at 99d2d29 (all-team now shows 'Show all your projects'), no sideways scroll"
+  },
   {
-   "id": "F1",
-   "clause": "#29 AC2: 'The rest, and the \"type its name\" box, sit behind \"Show all your projects (N more)\".' #29 AC5: '#8, #10, #11 and #16 still hold.' #10 AC4: 'After sign-in the page lists the projects ..., with a link to give access to more, and a box to type owner/name.'",
-   "repro": "Fake GitHub with acme/one and acme/two, both with TEAM.md (or with no projects at all). Open the board on the first run, or press Change project. NODE_PATH=$(npm root -g) node verification/29/f1_type_box.mjs",
-   "actual": "The list shows acme/one and acme/two and the 'Project missing?' link, with no 'Show all your projects' and no name box (all-team-*.png). With no projects at all, 'No project yet' has no name box either. In web/setup.tsx the details element is rendered only when others.length > 0 || all, and `all` can only turn true from inside that element.",
-   "expected": "The box to type owner/name can be reached from the picker whatever the list holds, behind 'Show all your projects' as AC2 places it.",
-   "ci_script": "none: CI has no browser, so this blocks by the clauses quoted; f1_type_box.mjs is the by-hand repro (exits 1 now, 0 once fixed)"
+   "id": "round2-changed-code",
+   "spec": "docs/changes/29.md#2 (AC2)",
+   "command": "NODE_PATH=$(npm root -g) node verification/29/page.mjs (R2 rows)",
+   "result": "pass",
+   "why": "with no other projects: 'Show all your projects' with no count, no help line, and a typed acme/typed opens that project"
   }
  ],
  "notes": [
@@ -83,9 +80,26 @@
   "Check again on the first run with exactly one team project now opens it straight away (AC3 applies).",
   "A look is GET /repos/<p>/contents/TEAM.md; up to 100 extra GitHub reads each time the list is shown.",
   "Scope: the diff from main touches docs/changes/29.md, server/github.ts, web/setup.tsx, web/App.tsx (passes first), web/board.css and adds server/projects.test.ts. No existing test changed, nothing under verification/.",
-  "Check list 548d7e2 had a 'non-JSON answer' case in the failed-look row; I moved it to a note after reading the diff, because a 200 is GitHub saying the file is there.",
-  "Not tested: a real github.com account with many repositories (spec section 3)."
+  "Not tested: a real github.com account with many repositories (spec section 3).",
+  "Check list 548d7e2 had a 'non-JSON answer' case in the failed-look row; moved to a note in round 1 after reading the diff, because a 200 is GitHub saying the file is there.",
+  "Round 2 diff 5018469..99d2d29 changes only web/setup.tsx (the details element always renders; count, help line and other list only with others). With no projects at all, 'No project yet' now also has 'Show all your projects' with the name box.",
+  "Prototype profile, no TEAM_CHECKER identity: no checker approval."
  ],
  "evidence": "verification/29/",
- "tamper_check": "git diff origin/main...575c0e9 -- verification/ is empty; verification/29/ is new in this round"
+ "tamper_check": "git diff 5018469 99d2d29 -- verification/ is empty",
+ "round1": {
+  "rev": "575c0e9278f5287ae1fb5102b1f7368dc6f33aba",
+  "verdict": "BLOCK",
+  "findings": [
+   "F1 no 'Show all your projects' and no name box when every project uses the team, or there are none"
+  ],
+  "evidence": "5018469"
+ },
+ "fixed": [
+  {
+   "id": "F1",
+   "repro": "NODE_PATH=$(npm root -g) node verification/29/f1_type_box.mjs -> 2/2 ok, exit 0",
+   "result": "fixed"
+  }
+ ]
 }

@@ -170,6 +170,17 @@ try {
     const reach = await visible(typeBox(page)) || await visible(showAll(page));
     log(reach, `F1 every project is a team one: the type-its-name box is reachable (#10 AC4 "a box to type owner/name"; #29 AC2 puts it behind "Show all") (${reach ? "yes" : "no box and no Show all"})`);
     await shoot(page, "all-team");
+    // Round 2 (changed code): the box works from there, and "Show all" has no count or empty list when there are no others.
+    if (await visible(showAll(page))) {
+      log((await showAll(page).first().innerText()).trim() === "Show all your projects", `R2 no others: "Show all your projects" with no count (${(await showAll(page).first().innerText()).trim()})`);
+      await showAll(page).first().click();
+      await page.waitForTimeout(300);
+      log(!(await visible(page.getByText(/don't use the team/))), "R2 no others: no help line about other projects");
+      await typeBox(page).fill("acme/typed");
+      await page.getByRole("button", { name: "Show it" }).click();
+      await page.waitForTimeout(1500);
+      log(await boardOf(page, "acme/typed"), "R2 a typed name from the all-team list opens that project");
+    }
     gh.stop();
   }
 
