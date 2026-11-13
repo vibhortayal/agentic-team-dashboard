@@ -1,10 +1,10 @@
 {
  "issue": 11,
- "rev": "3d97ee9",
+ "rev": "6e17670",
  "base": "8f48f84",
  "verdict": "BLOCK",
- "round": 3,
- "spec": "docs/changes/11.md v1 at 4c85eeb (unchanged at 3d97ee9)",
+ "round": 4,
+ "spec": "docs/changes/11.md v1 at 4c85eeb (unchanged at 6e17670)",
  "previous": [
   {
    "round": 1,
@@ -17,28 +17,28 @@
    "verdict": "BLOCK",
    "rev": "2bbc580",
    "evidence": "164dfaf"
-  }
- ],
- "handoff": "third BLOCK on #11: goes to the coordinator as a typed blocker, not back to the builder",
- "checks": [
-  {
-   "id": "F1-repro",
-   "spec": "docs/changes/11.md#AC1",
-   "command": "node verification/11/checks/ac1_other_pulls.mjs (10/10)",
-   "result": "pass"
   },
   {
-   "id": "F3-repro",
-   "spec": "docs/changes/11.md#AC2",
-   "command": "node verification/11/checks/ac2_masked.mjs (10/10)",
+   "round": 3,
+   "verdict": "BLOCK",
+   "rev": "3d97ee9",
+   "evidence": "35b68db"
+  }
+ ],
+ "handoff": "fourth BLOCK on #11 (the one extra round the owner allowed): goes to the coordinator, not back to the builder",
+ "checks": [
+  {
+   "id": "F4-repro",
+   "spec": "docs/changes/11.md#AC1",
+   "command": "node verification/11/checks/ac1_failed_newest.mjs (12/12, 5 status reads each)",
    "result": "pass"
   },
   {
    "id": "AC1",
    "spec": "docs/changes/11.md#AC1",
-   "command": "node verification/11/checks/ac1_try_it.mjs (15/15); ac1_other_pulls.mjs (10/10); ac1_failed_newest.mjs (11/12)",
+   "command": "ac1_try_it.mjs (15/15); ac1_other_pulls.mjs (10/10); ac1_failed_newest.mjs (12/12); ac1_waiting_second_read.mjs (4/6)",
    "result": "fail",
-   "finding": "F4"
+   "finding": "F5"
   },
   {
    "id": "AC1-https",
@@ -49,13 +49,13 @@
   {
    "id": "AC2",
    "spec": "docs/changes/11.md#AC2",
-   "command": "node verification/11/checks/ac2_ask.mjs (23/23); ac2_masked.mjs (10/10); verification/11/page.mjs",
+   "command": "ac2_ask.mjs (23/23); ac2_masked.mjs (10/10); page.mjs",
    "result": "pass"
   },
   {
    "id": "AC3",
    "spec": "docs/changes/11.md#AC3",
-   "command": "node verification/11/checks/ac3_your_app.mjs (19/19); verification/11/page.mjs",
+   "command": "ac3_your_app.mjs (19/19); page.mjs",
    "result": "pass"
   },
   {
@@ -67,7 +67,7 @@
   {
    "id": "AC5",
    "spec": "docs/changes/11.md#AC5",
-   "command": "node verification/11/checks/ac5_optional.mjs (29/29)",
+   "command": "ac5_optional.mjs (29/29)",
    "result": "pass"
   },
   {
@@ -79,13 +79,13 @@
   {
    "id": "NFR-reads",
    "spec": "docs/changes/11.md#7",
-   "command": "ac5_optional.mjs, ac1_other_pulls.mjs, ac1_failed_newest.mjs: at most 6 status reads, 9 reads per refresh",
+   "command": "ac5_optional.mjs, ac1_other_pulls.mjs, ac1_failed_newest.mjs, ac1_waiting_second_read.mjs: at most 6 status reads",
    "result": "pass"
   },
   {
    "id": "screens",
    "spec": "docs/changes/11.md#6",
-   "command": "verification/11/page.mjs: all ok, 16 screenshots (unchanged bytes)",
+   "command": "verification/11/page.mjs: all ok (42 checks), 16 screenshots; the 4 demo ones changed only in relative times (8 -> 9 hours ago)",
    "result": "pass"
   },
   {
@@ -97,39 +97,44 @@
  ],
  "findings": [
   {
-   "id": "F4",
-   "status": "new this round, in the read order rewritten for F1 (server/github.ts:160-168)",
+   "id": "F5",
+   "status": "new this round, in the read order rewritten for F4 (server/github.ts:158-184); case (a) passed at 3d97ee9, so the fix broke it; case (b) failed at 3d97ee9 too",
    "clause": "AC1 A waiting change shows a \"Try it\" button that opens its preview: the latest successful non-production deployment whose branch or commit matches the pull request",
-   "where": "server/github.ts:160-168: the status reads follow a fixed order (newest live, each waiting change's newest preview, second live, each waiting change's second preview, other changes) and stop at 6. A second preview is read for every waiting change whether or not its newest one worked, so with 3 waiting changes and a live deployment the last change in GitHub's pull order gets no second read",
-   "repro": "3 waiting pull requests #42, #41, #40, each with 2 previews (day 8 success, day 9), 1 live deployment; #40's day-9 preview failed. Reads: live, 42-9, 41-9, 40-9 (failure), 42-8, 41-8 = 6. #40's working day-8 preview is never read",
-   "expected": "#40's Try it is https://40-8.preview.example; 5 status reads are enough (live, three newest, then #40's older one), inside section 7's 6",
-   "actual": "#40 try_url null, 6 status reads",
-   "script": "verification/11/checks/ac1_failed_newest.mjs"
+   "where": "server/github.ts:177-184: pass 0 reads the newest deployment of every place (live, each waiting change, then each other open pull request) before pass 1 gives any place a second read. Open pull requests that aren't waiting show no Try it, but their reads use up the 6 before a waiting change whose newest preview failed gets its older one read",
+   "repro": "(a) 1 live deployment; waiting #40 with a working day-8 preview and a failed day-9 one; 4 other open pull requests (#50-#53) with one preview each. Reads: live, 40-9 (failure), 50, 51, 52, 53 = 6. (b) same with 3 waiting changes (#42, #41, #40) and 2 other open pull requests: live, 42-9, 41-9, 40-9, 50, 51 = 6",
+   "expected": "#40's Try it is https://40-8.preview.example; 3 status reads are enough in (a), 5 in (b), inside section 7's 6",
+   "actual": "#40 try_url null, 6 status reads, in both cases",
+   "script": "verification/11/checks/ac1_waiting_second_read.mjs"
   }
  ],
  "fixed": [
   {
-   "id": "F1",
-   "note": "Older waiting changes now get their reads before other open pull requests and before second previews (ac1_other_pulls.mjs 10/10: 5 and 6 status reads)."
+   "id": "F4",
+   "note": "Fixed: ac1_failed_newest.mjs 12/12 with 5 status reads, whichever of #40, #41, #42 has the failed newest preview."
   },
   {
-   "id": "F3",
-   "note": "The ask is masked before cleaning; ghp_, github_pat_, npm_, sk_live_, sbp_ keys are hidden (ac2_masked.mjs 10/10). _key_ and __key__ come out hidden too, via the board-wide mask after cleaning."
+   "id": "F1",
+   "note": "Still fixed when waiting changes' newest previews work: ac1_other_pulls.mjs 10/10. F5 is the case where one failed."
   },
   {
    "id": "F2",
    "note": "Still fixed: ac2_ask.mjs 23/23."
+  },
+  {
+   "id": "F3",
+   "note": "Still fixed: ac2_masked.mjs 10/10."
   }
  ],
  "notes": [
   "Check was not separate: the Verifier ran in the same account as the builder (prototype profile, no TEAM_CHECKER), so no checker approval and no verified label.",
-  "HTML tags (server/model.ts:202): only lowercase tags from a fixed list are stripped now. <DETAILS>, <SUMMARY> (uppercase) and <center>, <mark>, <small> stay on the card as written; round 2's code took them out. The team's own comments use lowercase <details>/<summary>, which go. The code comment says \"a<b and c>d\" stays as written; it still becomes \"ad\" (<b ...> is on the list). Spec only says plain text; note.",
-  "A key used as link text: \"[ghp_...](https://x.example)\" shows as \"[[hidden: github token]](https://x.example)\": masked, but the link marks stay. Note.",
-  "Production names: prod, production, 'Production - <name>' / 'Production – <name>' and github-pages count; production-preview, Prod-preview, prod staging, 'Production–x' (no spaces) and production_main don't. Spec doesn't define production; note.",
-  "Read order is fixed, not adaptive: with 6 or more waiting pull requests (plus a live link) some get no Try it at all; that needs more than section 7's 6 reads, so a note.",
+  "Masking: a key as link text, [ghp_...](https://x.example), now shows only \"[hidden: github token]\" (round 3's note is gone). plainMessage alone leaves _ghp_..._ in clear (the _ marks go after its mask), but the board-wide mask hides it: on the board _key_, __key__ and *_key_* all show \"[hidden: github token]\" and the key is nowhere in the board data.",
+  "HTML tags now match in any case: <B>, <DETAILS>, <SUMMARY> go. <center>, <mark>, <small> (not on the list) still stay. \"a<b and c>d\" still becomes \"ad\"; the misleading code comment is gone. Spec only says plain text; note.",
+  "Each place gets at most 2 reads: if a change's two newest previews both failed, an older working one is never read, even with reads to spare. Same limit as round 3; note.",
+  "Read order is fixed: with 6 or more waiting pull requests plus a live link, some get no Try it; that needs more than section 7's 6 reads, so a note.",
   "Unchanged from round 1: http:// and javascript: addresses still reach try_url and live_url in the data; the page shows only https links.",
-  "Baseline: #8 and #10 checks pass at head; base 8f48f84 unchanged since round 1, not rerun.",
-  "Tamper check: git diff 164dfaf 3d97ee9 -- verification/ is empty."
+  "Baseline: #8 and #10 checks pass at head; base 8f48f84 unchanged since round 1, not rerun. F5 case (a) was run at 3d97ee9 in a throwaway worktree: 5/6, (a) passes there.",
+  "A masking probe used npx tsx, fetched from the network; the verdict rests on the board-level checks, which ran offline.",
+  "Tamper check: git diff 35b68db 6e17670 -- verification/ is empty."
  ],
  "evidence": "verification/11/"
 }
