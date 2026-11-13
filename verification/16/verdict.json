@@ -1,0 +1,126 @@
+{
+ "issue": 16,
+ "rev": "b36f228e4fb8c83f7d5201af88f3d1fdbb8c75b0",
+ "base": "da515ce",
+ "verdict": "BLOCK",
+ "round": 1,
+ "spec": "docs/changes/16.md v1 at b36f228",
+ "check_list_commit": "78dd2d2",
+ "checks": [
+  {
+   "id": "AC1",
+   "spec": "docs/changes/16.md#5",
+   "command": "node verification/16/checks/ac1_list.mjs + verification/16/page.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC2",
+   "spec": "docs/changes/16.md#5",
+   "command": "node verification/16/checks/ac2_secret.mjs + page.mjs (tweetnacl and PyNaCl 1.6.2 SealedBox)",
+   "result": "pass"
+  },
+  {
+   "id": "AC3",
+   "spec": "docs/changes/16.md#5",
+   "command": "node verification/16/checks/ac3_variables.mjs + page.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC4",
+   "spec": "docs/changes/16.md#5",
+   "command": "node verification/16/checks/ac4_readonly.mjs + page.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC5",
+   "spec": "docs/changes/16.md#5",
+   "command": "node verification/16/checks/ac5_make.mjs + page.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC6",
+   "spec": "docs/changes/16.md#5",
+   "command": "node verification/16/checks/ac6_problems.mjs + page.mjs",
+   "result": "fail",
+   "why": "F2"
+  },
+  {
+   "id": "AC7",
+   "spec": "docs/changes/16.md#5",
+   "command": "node verification/16/checks/ac7_origin_demo.mjs + page.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC8-footer",
+   "spec": "docs/changes/16.md#5",
+   "command": "node verification/16/checks/ac8_footer.mjs + page.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC8-#8",
+   "spec": "docs/changes/16.md#5",
+   "command": "verification/8/checks/* via run-checks.sh",
+   "result": "pass"
+  },
+  {
+   "id": "AC8-#10",
+   "spec": "docs/changes/16.md#5",
+   "command": "verification/10/checks/* via run-checks.sh",
+   "result": "fail",
+   "why": "F1: ac1_one_file 2/3, ac2_npx 6/7; both passed at base"
+  },
+  {
+   "id": "AC8-#11",
+   "spec": "docs/changes/16.md#5",
+   "command": "verification/11/checks/* via run-checks.sh",
+   "result": "pass",
+   "why": "ac1_waiting_second_read fails 4/6 at base and head alike: not this change"
+  },
+  {
+   "id": "unit+types+build",
+   "spec": "docs/changes/16.md#5",
+   "command": "npm test (74/74); npx tsc --noEmit (exit 0); clean npm run build",
+   "result": "pass"
+  },
+  {
+   "id": "screens",
+   "spec": "docs/changes/16.md#5",
+   "command": "NODE_PATH=$(npm root -g) node verification/16/page.mjs: 24 screenshots, no sideways scroll",
+   "result": "pass"
+  }
+ ],
+ "findings": [
+  {
+   "id": "F1",
+   "clause": "AC8 #8, #10 and #11 still hold",
+   "row": "AC8 / F1",
+   "repro": "npm run build:server; copy dist-server/board.cjs alone into an empty folder; node board.cjs --demo --no-open",
+   "expected": "the board starts (as at base da515ce)",
+   "actual": "Error: Cannot find module 'tweetnacl' (server bundle requires tweetnacl and @noble/hashes/blake2.js, which are devDependencies and not bundled)",
+   "script": "verification/16/checks/f1_bundle_alone.mjs; also verification/10/checks/ac1_one_file.mjs and ac2_npx.mjs"
+  },
+  {
+   "id": "F2",
+   "clause": "AC6 ... an empty or over-long value ... each give one plain sentence",
+   "row": "AC6",
+   "repro": "POST /api/settings {name: a listed secret or variable, value: 12000 characters} from the board's own page",
+   "expected": "the too-long sentence, as at 8001 characters (\"That's too long to be a key. Check you copied the right thing.\")",
+   "actual": "400 \"That request didn't make sense.\" for any body over 10 000 characters (12 000, 49 153 and 1 048 576 tested)",
+   "script": "verification/16/checks/ac6_problems.mjs (6 failing rows)"
+  }
+ ],
+ "notes": [
+  "Paging: variables are read with per_page=30 and secrets with per_page=100, one page each. With 31 variables the 31st shows 'not set' though it is set; with 101 secrets the 101st shows 'not set'. The spec puts no limit on how many there are.",
+  "After a request body over 10 000 characters the board answers without reading the rest, and the next request on the same kept-alive connection sometimes fails: ECONNRESET after a 1 MB body, or a spurious 'That request didn't make sense.' for a valid 4 000-character save after several big ones. readJson is unchanged from the base, but the Settings box is the first place a person can paste that much. ac6_problems.mjs sends big bodies on their own connections.",
+  "Error answers are two short sentences (for example 'The box is empty. Paste the value first.'). Counted as plain, as #10's checks did for the same words.",
+  "Values are trimmed: '  key-with-spaces\\n' is saved as 'key-with-spaces'. A value of only spaces is 'The box is empty.' The spec says nothing about it.",
+  "A set checks setting says 'Ella set this for the team's checks.'; an unset one says 'Ella fills this in for the team's checks. Ask her in your chat.'",
+  "The Settings page's footer says 'It changes your project only when you press Save here.'; the board's says '... only when you save a setting.'",
+  "Make on an entry without make: random is refused ('The board can't make this one up. Paste the real value.'), with nothing sent.",
+  "A list file that isn't JSON gives no items and skipped 1 (the page says some of the list didn't make sense); a file with no settings array gives 'Nothing to set yet.'",
+  "A GitHub 5xx on save comes back to the page as HTTP 400 (dropped connection: 502). Only the sentence reaches the person.",
+  "Scope: the diff also edits docs/changes/10.md section 8 (the App's permissions) and README.md, both about #16's permissions and the footer. tweetnacl 1.0.3 and @noble/hashes 2.4.0 need the owner's deps-approved (CI's call). No existing test was changed; server/settings.test.ts is new.",
+  "Not tested: a real GitHub token against github.com (spec section 9); the GitHub App's permissions (the App doesn't exist yet)."
+ ],
+ "evidence": "verification/16/"
+}
