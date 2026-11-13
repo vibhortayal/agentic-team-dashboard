@@ -98,7 +98,7 @@ function WorkCard({ c, nowMs }: { c: Card; nowMs: number }) {
   return (
     <article className={"card" + (c.needed ? " is-needed" : "")}>
       <p className="title">{c.title}</p>
-      {c.holder && <div className="l-who"><Face holder={c.holder} /><span>{c.holder}</span></div>}
+      {c.holder && <div className="who"><Face holder={c.holder} /><span>{c.holder}</span></div>}
       <p className="update">{c.update} <time dateTime={c.update_at ?? undefined}>{ago(c.update_at, nowMs)}</time></p>
       {showCheck && <span className={`check ${c.check}`}>{c.check_words}</span>}
     </article>
