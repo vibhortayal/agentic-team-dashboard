@@ -1,0 +1,86 @@
+{
+ "issue": 32,
+ "rev": "4557e3affd567227a0cc9299f0019fbef33f7e81",
+ "base": "5f6b2b6",
+ "verdict": "BLOCK",
+ "round": 1,
+ "spec": "issue #32 and PR #31 'What changed' list (no change spec)",
+ "checks": [
+  {
+   "id": "R1-any-branch",
+   "spec": "issue #32 + PR #31 What changed 1",
+   "command": "node verification/32/checks/r1_r2_latest.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "R1-fallback",
+   "spec": "issue #32 + PR #31 What changed 1",
+   "command": "node verification/32/checks/r1_fallback.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "R1-max-4-reads",
+   "spec": "issue #32 + PR #31 What changed 1",
+   "command": "node verification/32/checks/r1_r2_latest.mjs; r1_fallback.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "R1-never-throws",
+   "spec": "issue #32 + PR #31 What changed 1",
+   "command": "node verification/32/checks/r1_fallback.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "R2-three-who-what-when",
+   "spec": "issue #32 + PR #31 What changed 2",
+   "command": "node verification/32/checks/r1_r2_latest.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "R3-heading-and-empty-sentences",
+   "spec": "issue #32 + PR #31 What changed 3",
+   "command": "NODE_PATH=$(npm root -g) node verification/32/page.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "R3-R4-390px-no-sideways-scroll",
+   "spec": "owner request: phone width 390px",
+   "command": "NODE_PATH=$(npm root -g) node verification/32/page.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "R4-error-hides-latest",
+   "spec": "issue #32 + PR #31 What changed 4",
+   "command": "node verification/32/checks/r4_error.mjs + page.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "R5-tests-typecheck-build",
+   "spec": "issue #32 + PR #31 What changed 5",
+   "command": "npx vitest run; npx tsc --noEmit; npm run build; bash .github/team/run-checks.sh",
+   "result": "pass"
+  },
+  {
+   "id": "F1-R5-card-holder-row-unchanged",
+   "spec": "issue #32 + PR #31 What changed 5 (existing behaviour unchanged)",
+   "command": "node verification/32/checks/f1_card_holder_style.mjs + page.mjs",
+   "result": "fail"
+  }
+ ],
+ "findings": [
+  {
+   "id": "F1",
+   "row": "R5",
+   "clause": "Existing behaviour unchanged",
+   "repro": "npm run build && node verification/32/checks/f1_card_holder_style.mjs",
+   "expected": "work card holder row display:flex, gap 8px, 14px (class with the .who rule, as at base)",
+   "actual": "class l-who, display:block, gap normal, 15px: face touches the name"
+  }
+ ],
+ "notes": [
+  "Every /commits/<sha> failing after /activity answers gives an empty list, with no /commits fallback; no clause covers it.",
+  "Lines are ordered by commit date, not push order.",
+  "An @team.invalid committer matching no role shows its raw name rather than You.",
+  "Untested: real GitHub /activity paging and rate limits."
+ ]
+}

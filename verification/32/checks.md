@@ -28,3 +28,4 @@ screenshots at 390px and 1280px, light and dark.
 | R3/R4 widths | phone width 390px with no sideways scroll | each page state above, plus a 300-character unbroken commit line, at 390 and 1280, light and dark: no sideways scroll; screenshots committed | `page.mjs` |
 | R3 demo | (the demo is how a person first sees it) | `--demo` shows the latest heading and lines | `page.mjs` |
 | R5 unchanged | all existing tests pass, typecheck and build pass | `npx vitest run`, `npx tsc --noEmit`, `npm run build` at base and head; existing verifier checks at base and head; diff shows no existing test changed | by hand, output in `README.md` |
+| F1 card holder row (round 1 finding) | R5: existing behaviour unchanged | the work card's "<face> Ian (builds)" row keeps its base style: its class has a top-level flex rule with an 8px gap (built page), and in a browser it is `display:flex`, gap 8px, 14px | `checks/f1_card_holder_style.mjs`, `page.mjs` |

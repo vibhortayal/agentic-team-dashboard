@@ -69,6 +69,16 @@ try {
     log(t.includes("Build the seed list") && t.includes("Open the first ticket") && !t.includes("Fourth, not shown") && !t.includes("details"), "cards: the three newest first lines, not the fourth");
     log(/Vera/.test(t) && /Ian/.test(t) && /Ella/.test(t), "cards: who by first name");
     log(!t.includes(STARTED) && !t.includes(NOTHING), "cards: no empty-board sentence");
+    // F1 (R5): the work card's "<face> Ian (builds)" row looks as it did at the base (flex row, 8px gap)
+    const row = await page.evaluate(() => {
+      const card = [...document.querySelectorAll("article.card")].find((a) => a.textContent.includes("Plan the garden"));
+      const span = card && [...card.querySelectorAll("span")].find((s) => s.textContent.trim() === "Ian (builds)");
+      const div = span?.parentElement;
+      if (!div) return null;
+      const s = getComputedStyle(div);
+      return { cls: div.className, display: s.display, gap: s.columnGap, size: s.fontSize };
+    });
+    log(row?.display === "flex" && row?.gap === "8px" && row?.size === "14px", `card holder row styled as at base: flex, 8px gap, 14px (got ${JSON.stringify(row)})`);
     const pos = await page.evaluate((h) => {
       const el = [...document.querySelectorAll("body *")].find((e) => e.children.length === 0 && e.textContent.trim() === h);
       const cols = document.querySelector(".columns");
