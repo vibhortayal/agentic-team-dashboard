@@ -7,9 +7,9 @@
 export function clientId(env: NodeJS.ProcessEnv = process.env): string | null {
   return env.BOARD_GITHUB_CLIENT_ID || BUILT_IN_CLIENT_ID || null;
 }
-// Filled in once the owner creates the GitHub App (see docs/changes/10.md, section 8).
-const BUILT_IN_CLIENT_ID = "";
-const BUILT_IN_APP_SLUG = "";
+// The board's own GitHub App (public, not secret): github.com/apps/team-board-for-builds
+const BUILT_IN_CLIENT_ID = "Iv23liTyyV7sd4VvmaKF";
+const BUILT_IN_APP_SLUG = "team-board-for-builds";
 
 /** The page where you let the board's GitHub App see a project, or null if no app is set up. */
 export function installUrl(env: NodeJS.ProcessEnv = process.env): string | null {
