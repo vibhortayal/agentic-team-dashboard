@@ -1,13 +1,19 @@
 # Release: builds the one-file board app on GitHub's Mac and Windows machines, starts each
 # one with the sample project to prove it runs, and attaches it to a draft GitHub release.
 # A gate file, owned by the owner. Runs only when the owner pushes a v* tag or starts it by hand,
-# never on pull requests (Mac minutes cost about ten times Linux ones).
+# never on pull requests (Mac minutes cost about ten times Linux ones). Started by hand with a
+# version such as v0.1.0, it also makes the tag and the draft release, so nobody needs a terminal.
 name: release
 
 on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release, like v0.1.0. Leave empty to only build and test."
+        required: false
+        default: ""
 
 concurrency:
   group: release-${{ github.ref }}
@@ -60,7 +66,7 @@ jobs:
 
   release:
     needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || inputs.version != ''
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -73,4 +79,7 @@ jobs:
       - name: Create a draft release (the owner publishes it)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release create "$GITHUB_REF_NAME" out/* --repo "$GITHUB_REPOSITORY" --draft --title "Progress board $GITHUB_REF_NAME" --notes "Download the file for your computer. It isn't signed yet, so your computer will warn you the first time. See the README for the two clicks that open it."
+          VERSION: ${{ inputs.version || github.ref_name }}
+        run: |
+          [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "The version must look like v0.1.0, not '$VERSION'."; exit 1; }
+          gh release create "$VERSION" out/* --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --draft --title "Progress board $VERSION" --notes "Download the file for your computer. It isn't signed yet, so your computer will warn you the first time. See the README for the two clicks that open it."
