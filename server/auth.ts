@@ -3,9 +3,11 @@
 // only read the projects you let it see. The board's GitHub App asks for read access to issues,
 // pull requests and metadata, nothing else.
 
-/** The board's GitHub App. Its client id is public by design (it is not a secret). */
+/** The board's GitHub App. Its client id is public by design (it is not a secret).
+ *  BOARD_GITHUB_CLIENT_ID=none turns sign-in off (tests, or a board that should only use GITHUB_TOKEN). */
 export function clientId(env: NodeJS.ProcessEnv = process.env): string | null {
-  return env.BOARD_GITHUB_CLIENT_ID || BUILT_IN_CLIENT_ID || null;
+  const id = env.BOARD_GITHUB_CLIENT_ID || BUILT_IN_CLIENT_ID;
+  return id && id !== "none" ? id : null;
 }
 // The board's own GitHub App (public, not secret): github.com/apps/team-board-for-builds
 const BUILT_IN_CLIENT_ID = "Iv23liTyyV7sd4VvmaKF";

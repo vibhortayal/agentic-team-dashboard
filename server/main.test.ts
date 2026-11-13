@@ -119,8 +119,13 @@ describe("changes from the page", () => {
   });
 
   it("can't sign in without the board's GitHub App", async () => {
-    const port = await start(new Source(new Session({ dir: tmp(), envToken: () => null })));
-    const own = { Host: `localhost:${port}`, Origin: `http://localhost:${port}`, "Content-Type": "application/json" };
-    expect((await post(port, "/api/signin/start", {}, own)).status).toBe(400);
+    process.env.BOARD_GITHUB_CLIENT_ID = "none"; // the built-in app is switched off for this test
+    try {
+      const port = await start(new Source(new Session({ dir: tmp(), envToken: () => null })));
+      const own = { Host: `localhost:${port}`, Origin: `http://localhost:${port}`, "Content-Type": "application/json" };
+      expect((await post(port, "/api/signin/start", {}, own)).status).toBe(400);
+    } finally {
+      delete process.env.BOARD_GITHUB_CLIENT_ID;
+    }
   });
 });
