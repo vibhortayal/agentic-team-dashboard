@@ -124,4 +124,5 @@ export async function listProjects(token: string): Promise<Project[]> {
   return repos.map(shape);
 }
 
-export const REPO_NAME = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
+// owner/name, where neither part is "." or ".." (they would point at other GitHub addresses).
+export const REPO_NAME = /^(?!\.{1,2}\/)[A-Za-z0-9_.-]+\/(?!\.{1,2}$)[A-Za-z0-9_.-]+$/;

@@ -34,11 +34,13 @@ jobs:
           node-version: "22.18"
       - run: npm ci
       - run: npm run package
-      - name: Smoke test (start the app with the sample project and read the board)
+      - name: Smoke test (the app alone in an empty folder, with the sample project)
         shell: bash
         run: |
           export BOARD_CONFIG_DIR="$RUNNER_TEMP/board-config"
-          "dist-app/${{ matrix.file }}" --demo --no-open --port 4399 > "$RUNNER_TEMP/app.log" 2>&1 &
+          mkdir "$RUNNER_TEMP/alone" && cp "dist-app/${{ matrix.file }}" "$RUNNER_TEMP/alone/"
+          cd "$RUNNER_TEMP/alone"
+          "./${{ matrix.file }}" --demo --no-open --port 4399 > "$RUNNER_TEMP/app.log" 2>&1 &
           for i in $(seq 1 30); do
             if curl -sf http://localhost:4399/api/board > "$RUNNER_TEMP/board.json"; then break; fi
             sleep 1

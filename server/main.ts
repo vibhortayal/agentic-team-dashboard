@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 // The progress board: a page on your own computer that shows where your project stands.
 // It only reads GitHub and only listens on this computer (127.0.0.1).
 
@@ -26,16 +27,19 @@ export class Session {
   readonly demo: boolean;
   readonly dir: string;
   private readonly startRepo: string;
+  private readonly folderRepo: string;
   private readonly envToken: () => string | null;
-  constructor(opts: { demo?: boolean; repo?: string; dir?: string; envToken?: () => string | null } = {}) {
+  constructor(opts: { demo?: boolean; repo?: string; folderRepo?: string; dir?: string; envToken?: () => string | null } = {}) {
     this.demo = !!opts.demo;
     this.dir = opts.dir ?? config.configDir();
     this.startRepo = opts.repo ?? "";
+    this.folderRepo = opts.folderRepo ?? "";
     this.envToken = opts.envToken ?? findToken;
   }
 
+  /** --repo wins, then the project the person picked, then the project folder the board started in. */
   repo(): string {
-    return this.startRepo || config.load(this.dir).repo || "";
+    return this.startRepo || config.load(this.dir).repo || this.folderRepo || "";
   }
 
   savedSignIn(): boolean {
@@ -272,8 +276,8 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     process.exit(1);
   }
   // From source in a project folder, show that project; the downloaded app asks instead.
-  const repo = values.repo ?? (values.demo || insideApp ? "" : repoFromGit() ?? "");
-  const source = new Source(new Session({ demo: values.demo, repo }));
+  const folderRepo = values.demo || insideApp || values.repo ? "" : repoFromGit() ?? "";
+  const source = new Source(new Session({ demo: values.demo, repo: values.repo ?? "", folderRepo }));
   const { port, server } = await listen(source, Number(values.port), () => {
     console.log("Board stopped. You can close this window.");
     server.close();
@@ -283,4 +287,12 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   console.log(`Your progress board is open at ${url}`);
   console.log("Keep this window open while you use it. Close it to stop the board.");
   if (!values["no-open"]) openBrowser(url);
+}
+
+// `node server/main.ts` starts the board too (the #8 checks start it this way).
+if (process.argv[1]?.endsWith("main.ts") && fileURLToPath(import.meta.url) === process.argv[1]) {
+  main().catch((e: unknown) => {
+    console.error(e instanceof Error ? e.message : e);
+    process.exit(1);
+  });
 }
