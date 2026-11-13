@@ -225,6 +225,8 @@ export function plainMessage(body: string, max = ASK_MAX): string {
 }
 
 function previewFor(item: GhItem, events: Array<[GhComment, TeamEvent]>, app: AppData): string | null {
+  // Only a change waiting for the person gets Try it (owner, 2026-11-13).
+  if (!labelsOf(item).includes("needs-human")) return null;
   if (item.pull_request !== undefined) {
     const head = app.pulls.find((p) => p.number === item.number);
     if (head) {

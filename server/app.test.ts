@@ -43,14 +43,17 @@ describe("AC1 Try it", () => {
     ],
   };
   it("uses the newest successful preview deployment of the pull request", () => {
-    expect(buildCard(pr(1, ["stage:review"]), [], app).try_url).toBe("https://new.example.com");
+    expect(buildCard(pr(1, ["stage:review", "needs-human"]), [], app).try_url).toBe("https://new.example.com");
   });
   it("falls back to a preview in the team's comments", () => {
-    const c = buildCard(pr(2, ["stage:review"]), [comment("x", { from: "implementer", kind: "handoff", preview: "https://p2.example.com" })], app);
+    const c = buildCard(pr(2, ["stage:review", "needs-human"]), [comment("x", { from: "implementer", kind: "handoff", preview: "https://p2.example.com" })], app);
     expect(c.try_url).toBe("https://p2.example.com");
   });
+  it("a change that isn't waiting for the person gets no link", () => {
+    expect(buildCard(pr(1, ["stage:review"]), [], app).try_url).toBeNull();
+  });
   it("no preview, no link", () => {
-    expect(buildCard(pr(3, ["stage:review"]), [], app).try_url).toBeNull();
+    expect(buildCard(pr(3, ["stage:review", "needs-human"]), [], app).try_url).toBeNull();
   });
 });
 
@@ -111,7 +114,7 @@ describe("AC5 optional reads", () => {
       if (m) return [200, [{ state: "success", environment_url: `https://d${m[1]}.example.com`, created_at: "2026-11-12T12:00:00Z" }]];
       return [404, {}];
     });
-    const app = await readApp("o/r", null, 1);
+    const app = await readApp("o/r", null, 1, [4]);
     expect(calls.length).toBeLessThanOrEqual(10);
     expect(app.releases).toHaveLength(1);
     expect(app.pulls).toEqual([{ number: 4, head_ref: "main", head_sha: "c" }]);
