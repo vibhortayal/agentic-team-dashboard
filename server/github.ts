@@ -149,16 +149,15 @@ export async function readApp(repo: string, token: string | null, openPulls: num
     ? (await optional<Array<{ number: number; head?: { ref?: string; sha?: string } }>>(`/repos/${repo}/pulls?state=open&per_page=100`, token, []))
         .map((p): PullHead => ({ number: p.number, head_ref: p.head?.ref ?? "", head_sha: p.head?.sha ?? "" }))
     : [];
-  // Status reads go where the board shows a link. Each place gets its newest deployment first; an
-  // older one is read only if the newer one has no working link. Order: the live app, each change
-  // waiting for the person, then other open changes. At most STATUS_READS reads in all.
+  // Status reads go only where the board shows a link: the live app and each change waiting for the
+  // person. Each gets its newest deployment first; an older one is read only if the newer one has no
+  // working link. At most STATUS_READS reads in all.
   const newest = [...(Array.isArray(raw) ? raw : [])].sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""));
   const previewsOf = (p: PullHead) => newest.filter((d) => !isProduction(d.environment ?? "") &&
     ((p.head_ref && d.ref === p.head_ref) || (p.head_sha && d.sha === p.head_sha)));
   const places: GhDeployment[][] = [
     newest.filter((d) => isProduction(d.environment ?? "")),
     ...pulls.filter((p) => waiting.includes(p.number)).map(previewsOf),
-    ...pulls.filter((p) => !waiting.includes(p.number)).map(previewsOf),
   ].filter((list) => list.length);
   const deployments: Deploy[] = [];
   const done = new Set<GhDeployment>();
