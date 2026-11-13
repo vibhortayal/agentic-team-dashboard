@@ -1,35 +1,44 @@
 {
  "issue": 11,
- "rev": "2bbc580",
+ "rev": "3d97ee9",
  "base": "8f48f84",
  "verdict": "BLOCK",
- "round": 2,
- "spec": "docs/changes/11.md v1 at 4c85eeb (unchanged at 2bbc580)",
- "previous": {
-  "round": 1,
-  "verdict": "BLOCK",
-  "rev": "4c85eeb",
-  "evidence": "aba0e47"
- },
+ "round": 3,
+ "spec": "docs/changes/11.md v1 at 4c85eeb (unchanged at 3d97ee9)",
+ "previous": [
+  {
+   "round": 1,
+   "verdict": "BLOCK",
+   "rev": "4c85eeb",
+   "evidence": "aba0e47"
+  },
+  {
+   "round": 2,
+   "verdict": "BLOCK",
+   "rev": "2bbc580",
+   "evidence": "164dfaf"
+  }
+ ],
+ "handoff": "third BLOCK on #11: goes to the coordinator as a typed blocker, not back to the builder",
  "checks": [
   {
    "id": "F1-repro",
    "spec": "docs/changes/11.md#AC1",
-   "command": "node verification/11/checks/ac1_try_it.mjs (15/15)",
+   "command": "node verification/11/checks/ac1_other_pulls.mjs (10/10)",
    "result": "pass"
   },
   {
-   "id": "F2-repro",
+   "id": "F3-repro",
    "spec": "docs/changes/11.md#AC2",
-   "command": "node verification/11/checks/ac2_ask.mjs (23/23)",
+   "command": "node verification/11/checks/ac2_masked.mjs (10/10)",
    "result": "pass"
   },
   {
    "id": "AC1",
    "spec": "docs/changes/11.md#AC1",
-   "command": "node verification/11/checks/ac1_try_it.mjs; node verification/11/checks/ac1_other_pulls.mjs (8/10)",
+   "command": "node verification/11/checks/ac1_try_it.mjs (15/15); ac1_other_pulls.mjs (10/10); ac1_failed_newest.mjs (11/12)",
    "result": "fail",
-   "finding": "F1"
+   "finding": "F4"
   },
   {
    "id": "AC1-https",
@@ -40,9 +49,8 @@
   {
    "id": "AC2",
    "spec": "docs/changes/11.md#AC2",
-   "command": "node verification/11/checks/ac2_ask.mjs; node verification/11/checks/ac2_masked.mjs (5/10); verification/11/page.mjs",
-   "result": "fail",
-   "finding": "F3"
+   "command": "node verification/11/checks/ac2_ask.mjs (23/23); ac2_masked.mjs (10/10); verification/11/page.mjs",
+   "result": "pass"
   },
   {
    "id": "AC3",
@@ -71,13 +79,13 @@
   {
    "id": "NFR-reads",
    "spec": "docs/changes/11.md#7",
-   "command": "ac5_optional.mjs, ac1_other_pulls.mjs: 6 status reads, 9 reads per refresh",
+   "command": "ac5_optional.mjs, ac1_other_pulls.mjs, ac1_failed_newest.mjs: at most 6 status reads, 9 reads per refresh",
    "result": "pass"
   },
   {
    "id": "screens",
    "spec": "docs/changes/11.md#6",
-   "command": "verification/11/page.mjs: all ok, 16 screenshots",
+   "command": "verification/11/page.mjs: all ok, 16 screenshots (unchanged bytes)",
    "result": "pass"
   },
   {
@@ -89,43 +97,39 @@
  ],
  "findings": [
   {
-   "id": "F1",
-   "status": "still open (round 1's repro passes; the same clause fails in two new cases)",
+   "id": "F4",
+   "status": "new this round, in the read order rewritten for F1 (server/github.ts:160-168)",
    "clause": "AC1 A waiting change shows a \"Try it\" button that opens its preview: the latest successful non-production deployment whose branch or commit matches the pull request",
-   "where": "server/github.ts:159-160: up to 2 status reads per open pull request, in GitHub's order, for every open pull request, waiting or not",
-   "repro": "(a) one waiting PR #40 (feat/seeds, preview day 5) and three newer open PRs that aren't waiting, each with 2 previews, plus a production deployment: the 6 status reads go to production and #43/#42's previews, #40 gets try_url null. (b) three waiting PRs, each with 2 successful previews, and 2 production deployments: #40 gets try_url null",
-   "expected": "every waiting change has its preview: (a) needs 2 status reads, (b) needs 5, both inside section 7's 6",
-   "script": "verification/11/checks/ac1_other_pulls.mjs"
-  },
-  {
-   "id": "F3",
-   "status": "new this round; present since 4c85eeb, missed in round 1 because that row compared the whole key only",
-   "clause": "AC2 Each \"Waiting for you\" card shows the message that asked, in plain text: ... masked",
-   "where": "server/model.ts:218 plainMessage removes every _ (as an emphasis mark) before maskTree runs (model.ts:336), so ghp_..., github_pat_..., npm_..., sk_live_..., sbp_... no longer match server/redact.ts's shapes. Release notes (model.ts:250) go the same way",
-   "repro": "asking comment \"Sign in with ghp_<36 chars> and tell me if it works.\": card.ask is \"Sign in with ghpQ7vX2...uio and tell me if it works.\" (the whole key minus the _)",
-   "expected": "\"Sign in with [hidden: github token] and tell me if it works.\"",
-   "script": "verification/11/checks/ac2_masked.mjs"
+   "where": "server/github.ts:160-168: the status reads follow a fixed order (newest live, each waiting change's newest preview, second live, each waiting change's second preview, other changes) and stop at 6. A second preview is read for every waiting change whether or not its newest one worked, so with 3 waiting changes and a live deployment the last change in GitHub's pull order gets no second read",
+   "repro": "3 waiting pull requests #42, #41, #40, each with 2 previews (day 8 success, day 9), 1 live deployment; #40's day-9 preview failed. Reads: live, 42-9, 41-9, 40-9 (failure), 42-8, 41-8 = 6. #40's working day-8 preview is never read",
+   "expected": "#40's Try it is https://40-8.preview.example; 5 status reads are enough (live, three newest, then #40's older one), inside section 7's 6",
+   "actual": "#40 try_url null, 6 status reads",
+   "script": "verification/11/checks/ac1_failed_newest.mjs"
   }
  ],
  "fixed": [
   {
-   "id": "F2",
-   "note": "HTML tags are gone from the ask (ac2_ask.mjs 23/23, page.mjs)."
+   "id": "F1",
+   "note": "Older waiting changes now get their reads before other open pull requests and before second previews (ac1_other_pulls.mjs 10/10: 5 and 6 status reads)."
   },
   {
-   "id": "F1 round-1 repro",
-   "note": "1 waiting change with 2 newer previews of other branches now gets its Try it (ac1_try_it.mjs 15/15)."
+   "id": "F3",
+   "note": "The ask is masked before cleaning; ghp_, github_pat_, npm_, sk_live_, sbp_ keys are hidden (ac2_masked.mjs 10/10). _key_ and __key__ come out hidden too, via the board-wide mask after cleaning."
+  },
+  {
+   "id": "F2",
+   "note": "Still fixed: ac2_ask.mjs 23/23."
   }
  ],
  "notes": [
   "Check was not separate: the Verifier ran in the same account as the builder (prototype profile, no TEAM_CHECKER), so no checker approval and no verified label.",
-  "server/app.test.ts change: the fake pull's branch moved from \"b\" to \"main\", the branch every fake deployment is on. Under the new design only previews of an open pull request get a status read, so with \"b\" no preview is read. The assertions (at most 10 reads, d19's link, all ok) are unchanged. Not loosened, and the file is new in #11, so it isn't an existing test. It no longer has a case where previews of other branches are newer; ac1_try_it.mjs and ac1_other_pulls.mjs cover that.",
-  "Production names (server/model.ts:239): 'Production – my-app' and 'github-pages' now count. So do 'production-preview', 'Prod-preview' and 'prod staging' (prod followed by a word break). Spec doesn't define production; note.",
-  "HTML tag stripping (server/model.ts:208) also takes out words in angle brackets that aren't tags: \"Press <Enter> to save. If a<b and c>d then ok.\" becomes \"Press  to save. If ad then ok.\" Spec silent; note.",
-  "Unchanged from round 1: http:// and javascript: addresses still reach try_url and live_url in the data; the page shows only https links. Only environment_url counts, not target_url.",
-  "Read count: 9 reads per refresh with 3 waiting changes and 20 deployments; refreshes inside the minute read none (ac5_optional.mjs).",
+  "HTML tags (server/model.ts:202): only lowercase tags from a fixed list are stripped now. <DETAILS>, <SUMMARY> (uppercase) and <center>, <mark>, <small> stay on the card as written; round 2's code took them out. The team's own comments use lowercase <details>/<summary>, which go. The code comment says \"a<b and c>d\" stays as written; it still becomes \"ad\" (<b ...> is on the list). Spec only says plain text; note.",
+  "A key used as link text: \"[ghp_...](https://x.example)\" shows as \"[[hidden: github token]](https://x.example)\": masked, but the link marks stay. Note.",
+  "Production names: prod, production, 'Production - <name>' / 'Production – <name>' and github-pages count; production-preview, Prod-preview, prod staging, 'Production–x' (no spaces) and production_main don't. Spec doesn't define production; note.",
+  "Read order is fixed, not adaptive: with 6 or more waiting pull requests (plus a live link) some get no Try it at all; that needs more than section 7's 6 reads, so a note.",
+  "Unchanged from round 1: http:// and javascript: addresses still reach try_url and live_url in the data; the page shows only https links.",
   "Baseline: #8 and #10 checks pass at head; base 8f48f84 unchanged since round 1, not rerun.",
-  "Tamper check: git diff aba0e47 2bbc580 -- verification/ is empty."
+  "Tamper check: git diff 164dfaf 3d97ee9 -- verification/ is empty."
  ],
  "evidence": "verification/11/"
 }

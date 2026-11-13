@@ -1,41 +1,30 @@
 # Verification of #11 (board for app testers)
 
-Round 2: **BLOCK** on `2bbc580`. Round 1 was BLOCK on `4c85eeb` (evidence `aba0e47`). The spec is `docs/changes/11.md` v1 at `4c85eeb`, unchanged since, and the base is `8f48f84`.
+Round 3: **BLOCK** on `3d97ee9`. This is the third BLOCK on #11 (round 1 on `4c85eeb`, evidence `aba0e47`; round 2 on `2bbc580`, evidence `164dfaf`), so it goes to the coordinator, not back to the builder. The spec is `docs/changes/11.md` v1 at `4c85eeb`, unchanged since, and the base is `8f48f84`.
 
 The Verifier ran in the same account as the builder (prototype profile, no checker identity). The check was not separate, and there is no checker approval.
 
 Rows and how each one is checked: `checks.md`. Per-row results and notes: `verdict.json`. The page checks and screenshots: `page.mjs` (by hand, needs Playwright).
 
-## Round 1's findings
+## Round 2's findings: fixed
 
-- **F2 (HTML tags in the ask): fixed.** `ac2_ask.mjs` 23/23, and the page shows no tags.
-- **F1 (Try it lost to other branches' previews): round 1's repro passes, but the clause still fails.** See below.
+- **F1 (older waiting changes lost their Try it to other open pull requests): fixed.** `ac1_other_pulls.mjs` 10/10, with 5 and 6 status reads.
+- **F3 (keys with `_` shown on the card): fixed.** The ask is masked before it is cleaned. `ac2_masked.mjs` 10/10.
+- F2 (HTML tags) is still fixed: `ac2_ask.mjs` 23/23.
 
-## Findings that block
+## Finding that blocks
 
-**F1, still open. AC1: a waiting change gets no Try it when other open pull requests use up the status reads.** AC1 says the button opens "the latest successful non-production deployment whose branch or commit matches the pull request". `server/github.ts:159-160` now spends up to 2 status reads on every open pull request in GitHub's order (newest first), whether it is waiting for the person or not. Older waiting changes get none of the 6 reads.
+**F4, new. AC1: a waiting change whose newest preview failed gets no Try it when there are 3 waiting changes and a live link.** AC1 says the button opens "the latest successful non-production deployment whose branch or commit matches the pull request". The status reads rewritten for F1 (`server/github.ts:160-168`) follow a fixed order and stop at 6: the newest live deployment, each waiting change's newest preview, the second live deployment, then each waiting change's second preview. The second previews get read even when the newest one worked, so the last waiting change in GitHub's pull order never gets its older preview read.
 
-```
-$ node verification/11/checks/ac1_other_pulls.mjs
-  FAIL AC1 the one waiting change has Try it when 3 open pull requests that aren't waiting have newer previews (want "https://seeds.preview.example", got null; 6 status reads)
-  FAIL AC1 waiting change #40 of 3 has Try it, its newest preview (got null; 6 status reads)
-AC1 Try it with other open pull requests: 8/10 passed
-```
-
-The first case needs 2 status reads and the second 5, both inside section 7's 6.
-
-**F3, new. AC2: keys with `_` in them are shown on the card.** AC2 says the ask is "masked". `plainMessage` (`server/model.ts:218`) takes out every `_` as an emphasis mark before masking runs (`model.ts:336`). After that a `ghp_`, `github_pat_`, `npm_`, `sk_live_` or `sbp_` key no longer matches its shape, so it reaches the card whole, minus the `_`. Release notes (`model.ts:250`) go the same way. This was in `4c85eeb` too. My round-1 row missed it because it only looked for the whole key, `_` included.
+Repro: waiting pull requests #42, #41, #40, each with a working day-8 preview and a day-9 preview, plus one live deployment. #40's day-9 preview failed. The reads go to live, 42-9, 41-9, 40-9 (failed), 42-8 and 41-8. #40's working day-8 preview is never read.
 
 ```
-$ node verification/11/checks/ac2_masked.mjs
-  FAIL AC2 masked: a github token (ghp_) in the ask is hidden (got "Sign in with ghpQ7vX2mR9kL4tW8nB3pZ6cY1dH5gJ0fSaEuio and tell me if it works.")
-  ... the same for github_pat_, npm_, sk_live_, sbp_
-AC2 masked keys with _: 5/10 passed
+$ node verification/11/checks/ac1_failed_newest.mjs
+  FAIL AC1 #40's newest preview failed: waiting change #40 has Try it https://40-8.preview.example (got null; 6 status reads)
+AC1 Try it when a waiting change's newest preview failed: 11/12 passed
 ```
 
-## The builder's test change
-
-`server/app.test.ts`: the fake pull request's branch went from `b` to `main`, the branch every fake deployment is on. With the new design only an open pull request's previews get a status read, so with `b` none would be read. The assertions (at most 10 reads, d19's link, every link ok) are unchanged. This doesn't loosen anything, and the file is new in #11, so it isn't an existing test.
+Expected: #40's Try it is `https://40-8.preview.example`. Five status reads are enough (live, the three newest previews, then #40's older one), inside section 7's 6. When #41's or #42's newest preview is the one that failed, the board gets it right.
 
 ## Commands and real output (Node 22.23.4, Linux x64)
 
@@ -44,19 +33,22 @@ $ npm ci && npx vite build     exit 0, exit 0
 $ npm run typecheck            exit 0
 $ npm test                     Test Files 5 passed (5), Tests 62 passed (62)
 $ bash .github/team/run-checks.sh
-#10 and #8 checks: all pass (9/9, 10/10, 32/32, 10/10, 20/20, 69/69, 12/12, 39/39, 37/37, 30/30, 17/17, 63/63)
-AC1 Try it: 15/15                AC2 the ask: 23/23
-AC1 Try it with other open pull requests: 8/10   <- F1
-AC2 masked keys with _: 5/10                     <- F3
+#10 and #8 checks: all pass
+AC1 Try it: 15/15                AC1 Try it with other open pull requests: 10/10
+AC2 the ask: 23/23               AC2 masked keys with _: 10/10
 AC3 your app: 19/19              AC5/sec 7 optional reads: 29/29
-verifier checks: 18 run, FAIL
+verifier checks: 18 run, ok      (before ac1_failed_newest.mjs was added)
+$ node verification/11/checks/ac1_failed_newest.mjs     11/12   <- F4
 $ NODE_PATH=$(npm root -g) node verification/11/page.mjs     page.mjs: all ok, 16 screenshots, no sideways scroll
 ```
 
-Section 7: with 20 deployments and 3 waiting changes, one refresh reads 9 times (releases, deployments, pulls, 6 statuses), and refreshes inside the minute read none.
+Tamper check: `git diff 164dfaf 3d97ee9 -- verification/` is empty.
 
-Tamper check: `git diff aba0e47 2bbc580 -- verification/` is empty.
+## Notes (not blocking)
+
+- Only lowercase tags from a fixed list are stripped now. `<DETAILS>`, `<center>`, `<mark>` and `<small>` stay on the card; round 2's code took them out. The team's own `<details>` and `<summary>` go. "a<b and c>d" still becomes "ad", though the code comment says it stays.
+- Production now means prod, production, "Production – name" or github-pages. "production-preview", "prod staging" and "Production–x" (no spaces) don't count.
 
 ## Not proved here
 
-How real hosts name their environments. "Production – <project>" and "github-pages" now count as live, and so do names like "production-preview" (see the notes).
+How real hosts name their environments.
