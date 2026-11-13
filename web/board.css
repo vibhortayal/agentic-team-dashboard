@@ -41,12 +41,15 @@ ul { list-style: none; padding: 0; margin: 0; }
 
 .needed { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
 .need {
+  align-self: start;
   background: var(--need-bg); border: 1px solid var(--need-line); border-radius: var(--radius);
   padding: 16px 18px; display: flex; flex-direction: column; gap: 6px;
 }
 .need .why { font-weight: 650; font-size: 18px; margin: 0; }
 .need .what { margin: 0; color: var(--muted); }
-.need a.go {
+.need .ask { margin: 4px 0 0; white-space: pre-line; background: var(--surface); border-radius: 10px; padding: 10px 12px; font-size: 16px; }
+.need .answer { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+.need a.go, .live a.go {
   align-self: start; margin-top: 6px; background: var(--accent); color: var(--accent-ink); text-decoration: none;
   padding: 8px 14px; border-radius: 999px; font-weight: 600; font-size: 15px;
 }
@@ -101,3 +104,17 @@ button.link { border: 0; background: none; padding: 0; color: var(--accent); tex
 .typed { margin-top: 16px; } .typed label { display: block; color: var(--muted); font-size: 15px; margin-bottom: 6px; }
 .typed div { display: flex; gap: 8px; } .typed input { flex: 1; min-width: 0; font: inherit; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
 .problem-line { color: var(--warn); }
+
+.appbox { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow); }
+.live { margin: 0 0 12px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.live a.go { margin-top: 0; }
+.versions li { padding: 10px 0; border-top: 1px solid var(--line); }
+.versions li:first-child { border-top: 0; }
+.vname { margin: 0; font-weight: 600; }
+.vname time { color: var(--muted); font-weight: 400; font-size: 14px; }
+.vtag { display: inline-block; font-size: 13px; font-weight: 600; padding: 2px 9px; border-radius: 999px; margin-left: 6px; }
+.vtag.live { color: var(--ok); background: var(--ok-bg); }
+.vtag.waiting { color: var(--warn); background: var(--warn-bg); }
+.vnotes { margin: 4px 0 0; color: var(--muted); white-space: pre-line; font-size: 15px; }
+.version.v-earlier .vname { font-weight: 500; color: var(--muted); }
+a.try { display: inline-block; margin: 2px 0 6px; font-weight: 600; font-size: 15px; }

@@ -4,7 +4,7 @@
 // if it is installed and signed in. Nothing is ever written.
 
 import { execFileSync } from "node:child_process";
-import type { GhComment, GhItem } from "./model.ts";
+import type { AppData, Deploy, GhComment, GhItem, GhRelease, PullHead } from "./model.ts";
 
 /** GitHub couldn't be read. The message is a plain sentence for the page. */
 export class CantRead extends Error {}
@@ -126,3 +126,45 @@ export async function listProjects(token: string): Promise<Project[]> {
 
 // owner/name, where neither part is "." or ".." (they would point at other GitHub addresses).
 export const REPO_NAME = /^(?!\.{1,2}\/)[A-Za-z0-9_.-]+\/(?!\.{1,2}$)[A-Za-z0-9_.-]+$/;
+
+interface GhDeployment { id: number; environment?: string; ref?: string; sha?: string; created_at?: string }
+interface GhDeployStatus { state?: string; environment_url?: string; target_url?: string; created_at?: string }
+
+/** Read one optional thing: if GitHub can't give it, the board shows without it (AC5 of #11). */
+async function optional<T>(path: string, token: string | null, empty: T): Promise<T> {
+  try {
+    return await get<T>(path, token);
+  } catch {
+    return empty;
+  }
+}
+
+const STATUS_READS = 6;
+
+/** The app's versions (releases) and its live and preview links (deployments). Never throws. */
+export async function readApp(repo: string, token: string | null, openPulls: number): Promise<AppData> {
+  const releases = await optional<GhRelease[]>(`/repos/${repo}/releases?per_page=10`, token, []);
+  const raw = await optional<GhDeployment[]>(`/repos/${repo}/deployments?per_page=30`, token, []);
+  const pulls = openPulls
+    ? (await optional<Array<{ number: number; head?: { ref?: string; sha?: string } }>>(`/repos/${repo}/pulls?state=open&per_page=100`, token, []))
+        .map((p): PullHead => ({ number: p.number, head_ref: p.head?.ref ?? "", head_sha: p.head?.sha ?? "" }))
+    : [];
+  // Newest first; keep the newest few per environment so the status reads stay small.
+  const picked: GhDeployment[] = [];
+  const perEnv = new Map<string, number>();
+  for (const d of [...(Array.isArray(raw) ? raw : [])].sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""))) {
+    const env = d.environment ?? "";
+    const n = perEnv.get(env) ?? 0;
+    if (n >= 2 || picked.length >= STATUS_READS) continue;
+    perEnv.set(env, n + 1);
+    picked.push(d);
+  }
+  const deployments: Deploy[] = [];
+  for (const d of picked) {
+    const st = (await optional<GhDeployStatus[]>(`/repos/${repo}/deployments/${d.id}/statuses?per_page=1`, token, []))[0];
+    const url = st?.environment_url || "";
+    if (!url) continue;
+    deployments.push({ environment: d.environment ?? "", ref: d.ref ?? "", sha: d.sha ?? "", url, at: st?.created_at ?? d.created_at ?? "", ok: st?.state === "success" });
+  }
+  return { releases: Array.isArray(releases) ? releases : [], deployments, pulls };
+}

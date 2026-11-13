@@ -9,8 +9,8 @@ import { parseArgs } from "node:util";
 import { demoData, insideApp, pageBuilt, pageFile } from "./assets.ts";
 import { clientId, installUrl, pollSignIn, refresh, startSignIn } from "./auth.ts";
 import * as config from "./config.ts";
-import { CantRead, findToken, listProjects, readProject, REPO_NAME, repoFromGit } from "./github.ts";
-import { buildBoard, errorBoard, type Board, type GhComment, type GhItem } from "./model.ts";
+import { CantRead, findToken, listProjects, readApp, readProject, REPO_NAME, repoFromGit } from "./github.ts";
+import { buildBoard, errorBoard, NO_APP_DATA, type AppData, type Board, type GhComment, type GhItem } from "./model.ts";
 
 const CACHE_MS = 60_000; // read GitHub at most once a minute
 const TYPES: Record<string, string> = {
@@ -98,15 +98,17 @@ export class Source {
 
   private async read(): Promise<Board> {
     if (this.session.demo) {
-      const data = JSON.parse(demoData()) as { repo: string; items: GhItem[]; comments: Record<string, GhComment[]> };
+      const data = JSON.parse(demoData()) as { repo: string; items: GhItem[]; comments: Record<string, GhComment[]>; app?: AppData };
       const comments = new Map(Object.entries(data.comments).map(([k, v]) => [Number(k), v]));
-      return buildBoard(data.repo, data.items, comments, now());
+      return buildBoard(data.repo, data.items, comments, now(), null, data.app ?? NO_APP_DATA);
     }
     const repo = this.session.repo();
     if (!repo) return errorBoard("", now(), "Pick which project to show.");
     try {
-      const { items, comments } = await readProject(repo, await this.session.token());
-      return buildBoard(repo, items, comments, now());
+      const token = await this.session.token();
+      const { items, comments } = await readProject(repo, token);
+      const app = await readApp(repo, token, items.filter((i) => i.pull_request !== undefined && i.state === "open").length);
+      return buildBoard(repo, items, comments, now(), null, app);
     } catch (e) {
       const msg = e instanceof CantRead ? e.message : "The board couldn't read your project just now. It will try again soon.";
       return errorBoard(repo, now(), msg);

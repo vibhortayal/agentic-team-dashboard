@@ -1,6 +1,6 @@
 // Draws the board from /api/board. React escapes every piece of text, so nothing is shown as HTML.
 import { useCallback, useEffect, useState } from "react";
-import type { Board, Card, Column } from "../server/model.ts";
+import type { AppView, Board, Card, Column, Version } from "../server/model.ts";
 import { PickProject, postJson, SignIn, type Status } from "./setup.tsx";
 
 const FACE_CLASS: Record<string, string> = {
@@ -30,9 +30,12 @@ function ago(iso: string | null | undefined, nowMs: number): string {
   return `${d} day${d === 1 ? "" : "s"} ago`;
 }
 
-function Link({ url, text, className }: { url: string | null | undefined; text: string; className?: string }) {
+// The person using the board tests their app; they never need GitHub or code (#11). So the only
+// links on the board open the app itself: the live app and each change's preview.
+function AppLink({ url, text, className }: { url: string | null | undefined; text: string; className?: string }) {
   const href = safeUrl(url);
-  return href ? <a href={href} target="_blank" rel="noopener" className={className}>{text}</a> : <span>{text}</span>;
+  if (!href || /(^|\.)github\.com$/i.test(new URL(href).hostname)) return null;
+  return <a href={href} target="_blank" rel="noopener" className={className}>{text}</a>;
 }
 
 function Face({ holder }: { holder: string }) {
@@ -45,8 +48,37 @@ function NeedCard({ c }: { c: Card }) {
     <li className="need">
       <p className="why">{c.needed!.why}</p>
       <p className="what">{c.title}</p>
-      <Link url={c.needed!.url} text="See what's asked" className="go" />
+      {c.ask && <p className="ask">{c.ask}</p>}
+      <AppLink url={c.try_url} text="Try it" className="go" />
+      <p className="answer">Tell Ella in your chat with her.</p>
     </li>
+  );
+}
+
+function VersionRow({ v, nowMs }: { v: Version; nowMs: number }) {
+  const tag = { live: "Live now", waiting: "Ready to go live, waiting for your OK", earlier: "" }[v.state];
+  return (
+    <li className={`version v-${v.state}`}>
+      <p className="vname">{v.name} {tag && <span className={`vtag ${v.state}`}>{tag}</span>}
+        {v.at && <time dateTime={v.at}> {ago(v.at, nowMs)}</time>}</p>
+      {v.notes && v.state !== "earlier" && <p className="vnotes">{v.notes}</p>}
+    </li>
+  );
+}
+
+function YourApp({ app, nowMs }: { app: AppView; nowMs: number }) {
+  const empty = !app.live_url && !app.versions.length;
+  return (
+    <section aria-labelledby="app-h">
+      <h2 id="app-h">Your app</h2>
+      {empty ? <p className="help">Your app isn't online yet. Ella will put a link here once it is.</p> : (
+        <div className="appbox">
+          {app.live_url && <p className="live"><AppLink url={app.live_url} text="Open your app" className="go" />
+            {app.live_at && <span className="help"> Updated {ago(app.live_at, nowMs)}</span>}</p>}
+          {!!app.versions.length && <ul className="versions">{app.versions.map((v) => <VersionRow key={v.name + v.state} v={v} nowMs={nowMs} />)}</ul>}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -64,7 +96,8 @@ function WorkCard({ c, nowMs }: { c: Card; nowMs: number }) {
   const showCheck = !(c.check === "none" && c.column && EARLY.has(c.column));
   return (
     <article className={"card" + (c.needed ? " is-needed" : "")}>
-      <p className="title"><Link url={c.url} text={c.title} /></p>
+      <p className="title">{c.title}</p>
+      {c.try_url && !c.needed && <AppLink url={c.try_url} text="Try it" className="try" />}
       {c.holder && <div className="who"><Face holder={c.holder} /><span>{c.holder}</span></div>}
       <p className="update">{c.update} <time dateTime={c.update_at ?? undefined}>{ago(c.update_at, nowMs)}</time></p>
       {showCheck && <span className={`check ${c.check}`}>{c.check_words}</span>}
@@ -84,7 +117,7 @@ function ColumnBox({ col, nowMs }: { col: Column; nowMs: number }) {
 }
 
 const STOPPED: Omit<Board, "updated"> = {
-  repo: "", repo_url: "", needed: [], handled: [], columns: [],
+  repo: "", repo_url: "", needed: [], handled: [], columns: [], app: { live_url: null, live_at: null, versions: [] },
   error: "The board stopped running on your computer. Ask Ella to start it again.",
 };
 
@@ -184,7 +217,7 @@ function BoardView({ status, onChangeProject, onSignOut, onStop }: {
           <section className="problem">
             <h2>We can't see your project right now</h2>
             <p>{board.error}</p>
-            {safeUrl(board.repo_url) && <p><Link url={board.repo_url} text="Look at it on GitHub instead" /></p>}
+            <p>If it keeps happening, tell Ella.</p>
           </section>
         )}
 
@@ -198,6 +231,8 @@ function BoardView({ status, onChangeProject, onSignOut, onStop }: {
           </ul>
         </section>
 
+        {board && !board.error && <YourApp app={board.app} nowMs={nowMs} />}
+
         {!!board?.handled.length && (
           <section aria-labelledby="handled-h">
             <h2 id="handled-h">Ella handled these herself</h2>
@@ -207,7 +242,7 @@ function BoardView({ status, onChangeProject, onSignOut, onStop }: {
         )}
 
         <section aria-labelledby="progress-h">
-          <h2 id="progress-h">How it's going</h2>
+          <h2 id="progress-h">What the team is doing</h2>
           <p className="help">Each card is one piece of work. It moves right as the team gets it done.</p>
           {/* A problem means we know nothing current, so show no columns rather than stale ones. */}
           <div className="columns">{board && !board.error && board.columns.map((col) => <ColumnBox key={col.key} col={col} nowMs={nowMs} />)}</div>

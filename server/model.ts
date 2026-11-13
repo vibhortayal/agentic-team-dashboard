@@ -37,6 +37,10 @@ export interface Card {
   needed: { why: string; url: string } | null;
   handled: { why: string; url: string; at: string | null } | null;
   closed: boolean;
+  /** The message that asked, as plain text (AC2 of #11). */
+  ask: string;
+  /** Where to try this change, if the team or the host left a preview link (AC1 of #11). */
+  try_url: string | null;
 }
 export type ColumnKey = "getting-ready" | "ready" | "building" | "checking" | "waiting" | "done";
 export interface Column { key: ColumnKey; title: string; help: string; cards: Card[] }
@@ -48,7 +52,19 @@ export interface Board {
   needed: Card[];
   handled: Card[];
   columns: Column[];
+  app: AppView;
 }
+
+// ---------- the app itself: versions and links (#11) ----------
+export interface GhRelease { tag_name?: string; name?: string; body?: string; draft?: boolean; prerelease?: boolean; published_at?: string | null; created_at?: string }
+/** One deployment with its latest status, as github.ts flattens it. */
+export interface Deploy { environment: string; ref: string; sha: string; url: string; at: string; ok: boolean }
+export interface PullHead { number: number; head_ref: string; head_sha: string }
+export interface AppData { releases: GhRelease[]; deployments: Deploy[]; pulls: PullHead[] }
+export const NO_APP_DATA: AppData = { releases: [], deployments: [], pulls: [] };
+
+export interface Version { name: string; notes: string; at: string | null; state: "live" | "waiting" | "earlier" }
+export interface AppView { live_url: string | null; live_at: string | null; versions: Version[] }
 
 const EVENT = /<!--\s*team-event\s*(\{[\s\S]*?\})\s*-->/g;
 
@@ -181,7 +197,65 @@ export function teamComments(comments: GhComment[]): Array<[GhComment, TeamEvent
     });
 }
 
-export function buildCard(item: GhItem, comments: GhComment[]): Card {
+const ASK_MAX = 600;
+// The evidence line's fields are for the team, not for the person trying the app.
+const EVIDENCE = /^\W*(Rows|Revision|Files|Command|Expected \/ actual|Repro)\s*:/i;
+
+/** A comment as plain text for a non-coder: no team header, hidden data, Markdown marks or code. */
+export function plainMessage(body: string, max = ASK_MAX): string {
+  let text = (body || "")
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1");
+  const lines = text.split("\n").map((l) => l.trim());
+  // The team header is the first line ("**Ella · Engagement Lead** → owner"): a role marker, not a message.
+  const first = lines.findIndex((l) => l.length > 0);
+  if (first >= 0 && /[·→]/.test(lines[first])) lines.splice(first, 1);
+  text = lines
+    .filter((l) => !EVIDENCE.test(l))
+    .map((l) => l.replace(/^[-*+]\s+/, "• ").replace(/^#+\s*/, "").replace(/^>\s?/, "").replace(/[*_`]/g, "").replace(/^---+$/, ""))
+    .join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  return text.length > max ? text.slice(0, max - 1).trimEnd() + "…" : text;
+}
+
+function previewFor(item: GhItem, events: Array<[GhComment, TeamEvent]>, app: AppData): string | null {
+  if (item.pull_request !== undefined) {
+    const head = app.pulls.find((p) => p.number === item.number);
+    if (head) {
+      const hits = app.deployments
+        .filter((d) => d.ok && !isProduction(d.environment) && (d.ref === head.head_ref || d.sha === head.head_sha))
+        .sort((a, b) => b.at.localeCompare(a.at));
+      if (hits.length) return hits[0].url;
+    }
+  }
+  let url: string | null = null;
+  for (const [, ev] of events) if (typeof ev.preview === "string" && ev.preview) url = ev.preview;
+  return url;
+}
+
+function isProduction(env: string): boolean {
+  return /^prod(uction)?$/i.test(env.trim());
+}
+
+export function buildApp(app: AppData): AppView {
+  const live = app.deployments.filter((d) => d.ok && isProduction(d.environment)).sort((a, b) => b.at.localeCompare(a.at))[0];
+  const rel = app.releases.filter((r) => !r.prerelease);
+  const waiting = rel.filter((r) => r.draft).sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""))[0];
+  const published = rel.filter((r) => !r.draft).sort((a, b) => (b.published_at ?? "").localeCompare(a.published_at ?? ""));
+  const version = (r: GhRelease, state: Version["state"]): Version => ({
+    name: r.name || r.tag_name || "A version",
+    notes: plainMessage(r.body ?? "", 280),
+    at: (state === "waiting" ? r.created_at : r.published_at) ?? null,
+    state,
+  });
+  const versions: Version[] = [];
+  if (waiting) versions.push(version(waiting, "waiting"));
+  published.slice(0, 6).forEach((r, i) => versions.push(version(r, i === 0 ? "live" : "earlier")));
+  return { live_url: live?.url ?? null, live_at: live?.at ?? null, versions };
+}
+
+export function buildCard(item: GhItem, comments: GhComment[], app: AppData = NO_APP_DATA): Card {
   const labels = labelsOf(item);
   const stage = one(labels, "stage:");
   const role = one(labels, "role:");
@@ -204,10 +278,16 @@ export function buildCard(item: GhItem, comments: GhComment[]): Card {
   }
 
   let needed: Card["needed"] = null;
+  let ask = "";
   if (labels.includes("needs-human")) {
     const human = labels.find((lb) => lb.startsWith("human:")) ?? "";
     let askUrl = itemUrl;
-    for (const [c, ev] of events) if (ev.to === "owner" || ev.human) askUrl = c.html_url || askUrl;
+    for (const [c, ev] of events) {
+      if (ev.to === "owner" || ev.human) {
+        askUrl = c.html_url || askUrl;
+        ask = plainMessage(c.body ?? "");
+      }
+    }
     needed = { why: NEEDED[human] ?? NEEDED_DEFAULT, url: askUrl };
   }
 
@@ -235,12 +315,14 @@ export function buildCard(item: GhItem, comments: GhComment[]): Card {
     needed,
     handled,
     closed: item.state === "closed",
+    ask,
+    try_url: previewFor(item, events, app),
   };
 }
 
 export function buildBoard(repo: string, items: GhItem[], comments: Map<number, GhComment[]>,
-                           updated: string, error: string | null = null): Board {
-  const cards = items.map((it) => buildCard(it, comments.get(it.number) ?? []));
+                           updated: string, error: string | null = null, app: AppData = NO_APP_DATA): Board {
+  const cards = items.map((it) => buildCard(it, comments.get(it.number) ?? [], app));
   const needed: Card[] = [];
   const handled: Card[] = [];
   const byColumn = new Map<ColumnKey, Card[]>(COLUMNS.map(([k]) => [k, []]));
@@ -257,6 +339,7 @@ export function buildBoard(repo: string, items: GhItem[], comments: Map<number, 
     needed,
     handled,
     columns: COLUMNS.map(([key, title, help]) => ({ key, title, help, cards: byColumn.get(key)! })),
+    app: error ? buildApp(NO_APP_DATA) : buildApp(app),
   });
 }
 
