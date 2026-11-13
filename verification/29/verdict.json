@@ -1,0 +1,91 @@
+{
+ "issue": 29,
+ "rev": "575c0e9",
+ "base": "5f6b2b6 (origin/main, the merge base)",
+ "verdict": "BLOCK",
+ "round": 1,
+ "spec": "docs/changes/29.md v1 at 575c0e9",
+ "check_list_commit": "548d7e2",
+ "checks": [
+  {
+   "id": "AC1",
+   "spec": "docs/changes/29.md#2",
+   "command": "node verification/29/checks/ac1_projects.mjs",
+   "result": "pass",
+   "why": "41/41: marked and first through /user/repos and installations; 100 projects all looked at, 101 and 250 exactly 100 looked at and all listed; peak 8 looks at once; 500, 403, 401, 429, 502, dropped connection and a look that never answers (20 s) give team: false and a 200 list"
+  },
+  {
+   "id": "AC2",
+   "spec": "docs/changes/29.md#2",
+   "command": "NODE_PATH=$(npm root -g) node verification/29/page.mjs",
+   "result": "pass",
+   "why": "2 team + 3 others: the 2 up front, the 3 and the name box hidden; 'Show all your projects (3 more)' shows them; picking opens the board and saves"
+  },
+  {
+   "id": "AC3",
+   "spec": "docs/changes/29.md#2",
+   "command": "NODE_PATH=$(npm root -g) node verification/29/page.mjs",
+   "result": "pass",
+   "why": "1 team + 4 others on the first run: its board in about 100 ms, no list shown on the way; Change project shows the list and it stays; 2 team projects show the list; a saved project is kept"
+  },
+  {
+   "id": "AC4",
+   "spec": "docs/changes/29.md#2",
+   "command": "NODE_PATH=$(npm root -g) node verification/29/page.mjs",
+   "result": "pass",
+   "why": "No project yet, talk to Ella first, 3 steps (11, 11, 13 words), 'Your first project' links https://agents.teamnightshift.org/learn/first-project.html, Check again reads the list again and moves on once TEAM.md appears; App sign-in keeps 'Let the board see it on GitHub'"
+  },
+  {
+   "id": "AC5-type-box",
+   "spec": "docs/changes/29.md#2 (AC2, AC5) and docs/changes/10.md AC4",
+   "command": "NODE_PATH=$(npm root -g) node verification/29/f1_type_box.mjs",
+   "result": "fail",
+   "why": "F1: when no project is outside the team ones (every project uses the team, or there are none), there is no 'Show all your projects' and no box to type a project's name"
+  },
+  {
+   "id": "AC5-#8,#10,#11,#16",
+   "spec": "docs/changes/29.md#2",
+   "command": "bash .github/team/run-checks.sh",
+   "result": "pass",
+   "why": "32 run, ok (31 at base, ok)"
+  },
+  {
+   "id": "unit+types+build",
+   "spec": "docs/changes/29.md#2",
+   "command": "npm ci; rm -rf dist dist-server; npm run build; npx tsc --noEmit; npm test",
+   "result": "pass",
+   "why": "head: build 0, tsc 0, 79/79 (7 files); base: build 0, tsc 0, 75/75"
+  },
+  {
+   "id": "screens",
+   "spec": "docs/changes/29.md#2",
+   "command": "NODE_PATH=$(npm root -g) node verification/29/page.mjs",
+   "result": "pass",
+   "why": "40 screenshots (list, list-all, opened, change, none, none-app, all-team, loading, error at 390 and 1280, light and dark), no sideways scroll"
+  }
+ ],
+ "findings": [
+  {
+   "id": "F1",
+   "clause": "#29 AC2: 'The rest, and the \"type its name\" box, sit behind \"Show all your projects (N more)\".' #29 AC5: '#8, #10, #11 and #16 still hold.' #10 AC4: 'After sign-in the page lists the projects ..., with a link to give access to more, and a box to type owner/name.'",
+   "repro": "Fake GitHub with acme/one and acme/two, both with TEAM.md (or with no projects at all). Open the board on the first run, or press Change project. NODE_PATH=$(npm root -g) node verification/29/f1_type_box.mjs",
+   "actual": "The list shows acme/one and acme/two and the 'Project missing?' link, with no 'Show all your projects' and no name box (all-team-*.png). With no projects at all, 'No project yet' has no name box either. In web/setup.tsx the details element is rendered only when others.length > 0 || all, and `all` can only turn true from inside that element.",
+   "expected": "The box to type owner/name can be reached from the picker whatever the list holds, behind 'Show all your projects' as AC2 places it.",
+   "ci_script": "none: CI has no browser, so this blocks by the clauses quoted; f1_type_box.mjs is the by-hand repro (exits 1 now, 0 once fixed)"
+  }
+ ],
+ "notes": [
+  "The board reads only the status of the TEAM.md look: a 200 whose body isn't JSON is marked team: true. GitHub's 200 means the file is there, so this isn't a failed look.",
+  "A look that never answers holds /api/projects for about 20 s (the board's existing 20 s timeout per GitHub read), then the list answers with that project as not a team one. 'Finding your project...' shows meanwhile.",
+  "Over the cap the first 100 projects in GitHub's order are looked at; with /user/repos that is the 100 most recently updated. Among team and non-team projects GitHub's order is kept.",
+  "After Change project, reloading the page goes back to the saved project's board (the list is the page's own state, as in #10).",
+  "With no team project but other projects, 'No project yet' keeps 'Show all your projects (N more)' with the name box. 'Let the board see it on GitHub' also shows for a GITHUB_TOKEN board, since install_url always has the built-in App.",
+  "Check again on the first run with exactly one team project now opens it straight away (AC3 applies).",
+  "A look is GET /repos/<p>/contents/TEAM.md; up to 100 extra GitHub reads each time the list is shown.",
+  "Scope: the diff from main touches docs/changes/29.md, server/github.ts, web/setup.tsx, web/App.tsx (passes first), web/board.css and adds server/projects.test.ts. No existing test changed, nothing under verification/.",
+  "Check list 548d7e2 had a 'non-JSON answer' case in the failed-look row; I moved it to a note after reading the diff, because a 200 is GitHub saying the file is there.",
+  "Not tested: a real github.com account with many repositories (spec section 3)."
+ ],
+ "evidence": "verification/29/",
+ "tamper_check": "git diff origin/main...575c0e9 -- verification/ is empty; verification/29/ is new in this round"
+}

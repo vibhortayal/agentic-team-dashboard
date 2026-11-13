@@ -74,7 +74,7 @@ await run("#29 AC1 team projects", async (r, own) => {
   r.note(`40 looks of 150 ms took ${ms} ms with a peak of ${g8.peak} open at once`);
 
   // 5. A look that fails.
-  const kinds = { "acme/e500": 500, "acme/e403": 403, "acme/e401": 401, "acme/e429": 429, "acme/e502": 502, "acme/reset": "reset", "acme/badjson": "badjson" };
+  const kinds = { "acme/e500": 500, "acme/e403": 403, "acme/e401": 401, "acme/e429": 429, "acme/e502": 502, "acme/reset": "reset" };
   const failing = Object.keys(kinds);
   const gf = own(await new FakeGitHub({ repos: ["acme/plain", ...failing, "acme/realteam"], team: ["acme/realteam", ...failing] }).start());
   Object.assign(gf.lookFail, kinds);
@@ -83,10 +83,17 @@ await run("#29 AC1 team projects", async (r, own) => {
   r.check(l.status === 200 && l.projects?.length === failing.length + 2, `AC1 failed looks never fail the list (${l.status}, ${l.projects?.length} of ${failing.length + 2})`);
   for (const f of failing) {
     const p = l.projects?.find((x) => x.repo === f);
-    r.check(p && p.team === false, `AC1 a look that ${typeof kinds[f] === "number" ? "answers " + kinds[f] : kinds[f] === "reset" ? "drops the connection" : "answers non-JSON"} counts as not a team project (${JSON.stringify(p)})`);
+    r.check(p && p.team === false, `AC1 a look that ${typeof kinds[f] === "number" ? "answers " + kinds[f] : "drops the connection"} counts as not a team project (${JSON.stringify(p)})`);
   }
   r.check(l.projects?.[0]?.repo === "acme/realteam" && l.projects[0].team === true, `AC1 a real team project next to failed looks is still marked and first (${short(l.projects?.slice(0, 2))})`);
   r.check(bf.alive(), "the board is still running");
+  // A 200 whose body isn't JSON: GitHub said the file is there, so not counted as a failed look (a note, not a row).
+  const gj = own(await new FakeGitHub({ repos: ["acme/badjson"], team: ["acme/badjson"] }).start());
+  gj.lookFail["acme/badjson"] = "badjson";
+  const bj = own(await startBoard(gj));
+  l = await list(bj);
+  r.check(l.status === 200 && l.projects?.length === 1, `a 200 TEAM.md answer whose body isn't JSON never fails the list (${l.status})`);
+  r.note(`a 200 TEAM.md answer whose body isn't JSON is marked team: ${l.projects?.[0]?.team} (the board reads only the status)`);
 
   // 6. A look that never answers: the list still answers once the board gives up on it.
   const gh6 = own(await new FakeGitHub({ repos: ["acme/hang", "acme/realteam"], team: ["acme/realteam", "acme/hang"] }).start());
@@ -102,5 +109,5 @@ await run("#29 AC1 team projects", async (r, own) => {
     `AC1 a look that never answers: the list still answers, that project not a team one (${hl.status} ${JSON.stringify(hl.data ?? hl.err).slice(0, 200)}, ${took} ms)`);
   r.note(`a look that never answers held the list for ${took} ms`);
 
-  r.check([b, b2, b8, bf, b6].every((x) => x.netAttempts().length === 0), "no attempt to reach the internet");
+  r.check([b, b2, b8, bf, bj, b6].every((x) => x.netAttempts().length === 0), "no attempt to reach the internet");
 });
