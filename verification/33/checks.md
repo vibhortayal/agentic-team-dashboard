@@ -42,3 +42,25 @@ How they run:
 | §8 deps | `electron` 45.2.3 and `electron-builder` 26.18.1 (build only), `electron-updater` 6.8.12 (inside the app), in `desktop/package.json` only | exact versions; electron and electron-builder in devDependencies, electron-updater in dependencies; none added at the root | `checks/ac8_scope.mjs` |
 | §7 secrets | No new ones | workflow uses only the five #28 secrets and GITHUB_TOKEN | `checks/ac7_release.mjs` |
 | scope | §4 scope out | no Ella chat, Windows or Intel build, icon or README change in the diff | by hand |
+
+## Round 2 rows (spec draft v2 at ec0e18c: AC9, AC10)
+
+Written before reading the round-2 code. To drive AC10 I then read only which GitHub addresses `server/updates.ts`
+asks for. The board runs from source with `../8/checks/guard.mjs` (no internet, steppable clock) against a fake GitHub.
+
+| Row | Clause | Check | Where |
+|---|---|---|---|
+| AC9 board notice | Once a new version has downloaded, the board shows "A new version of Team Board is ready." with a Restart now button | in the real app, after the app learns a version downloaded, the page shows that sentence and a "Restart now" button; before, it does not | `app.mjs`, `checks/ac4_ac6_main.mjs` |
+| AC9 restart | that restarts into it | pressing Restart now makes the app call `quitAndInstall` (fake updater) | `app.mjs`, `checks/ac4_ac6_main.mjs` |
+| AC9 once per version | The app asks with its own box only once per version | `update-downloaded` twice for 0.2.0: one box; then 0.3.0: a second box | `checks/ac4_ac6_main.mjs` |
+| AC9 outside | Outside the Mac app nothing shows | the one-file server (from source, `--demo` and a real repo) shows no Team Board notice; asking it to restart does nothing and it keeps running | `checks/ac9_ac10_board.mjs`, `app.mjs` |
+| AC9 restart only from the board | (AC4 locked down; #10 "only this page") | a restart request from another web page's origin is refused, as the board's other changes are | `checks/ac9_ac10_board.mjs` |
+| AC10 behind | `.team/VERSION` names a commit that agentic-team-oss `main` has moved past: the board says the team has learned new things and to tell Ella "update the team" | VERSION = an older commit of main: the notice, with "update the team" | `checks/ac9_ac10_board.mjs`, page in `app.mjs` |
+| AC10 current | (inverse) | VERSION = main's newest commit: no notice; VERSION with a trailing newline or spaces reads the same | `checks/ac9_ac10_board.mjs` |
+| AC10 read only | The board only reads | every request the board makes to GitHub for this is a GET; no installer, no write | `checks/ac9_ac10_board.mjs` |
+| AC10 6 hours | asks GitHub at most every six hours per project | many board reads within 6 h: one round of GitHub reads; at 6 h minus a minute: none; at 6 h plus a minute: one more; a second project gets its own | `checks/ac9_ac10_board.mjs` |
+| AC10 no team | stays quiet when the project has no team | no `.team/VERSION` (404): no notice, board works, no error | `checks/ac9_ac10_board.mjs` |
+| AC10 GitHub down | or GitHub doesn't answer | the VERSION read or the main read answers 500, 403 rate limit, a reset connection or broken JSON: no notice, no error, cards still show | `checks/ac9_ac10_board.mjs` |
+| AC10 demo | The demo shows the notice | `--demo`, no network: the notice shows | `checks/ac9_ac10_board.mjs`, `app.mjs` |
+| AC9/AC10 widths | (screens) | notices at 420 and 1280, light and dark, no sideways scroll; screenshots | `app.mjs` |
+| regression | round 1 rows | everything from round 1 again | all |
