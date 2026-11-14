@@ -4,6 +4,9 @@
 # never on pull requests (Mac minutes cost about ten times Linux ones). Started by hand with a
 # version such as v0.1.0, it also makes the tag and the draft release, so nobody needs a terminal.
 # This repo is public, so anyone can download the files from its own Releases page. No extra token.
+# The Mac app is signed with the owner's Apple Developer ID and checked by Apple (notarized) when
+# the MAC_CERT_P12, MAC_CERT_PASSWORD, APPLE_ID, APPLE_TEAM_ID and APPLE_APP_PASSWORD secrets are
+# set. Without them it is signed ad hoc, as before, and the Mac warns people the first time.
 name: release
 
 on:
@@ -31,7 +34,7 @@ jobs:
           - os: windows-latest
             file: Team-Board-windows-x64.exe
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
+    timeout-minutes: 15   # Apple's check below usually takes a few minutes; it gives up at 12
     permissions:
       contents: read
     steps:
@@ -41,6 +44,36 @@ jobs:
           node-version: "22.18"
       - run: npm ci
       - run: npm run package
+      - name: Sign the Mac app (with the Developer ID when its secrets are set, ad hoc otherwise)
+        if: runner.os == 'macOS'
+        env:
+          MAC_CERT_P12: ${{ secrets.MAC_CERT_P12 }}
+          MAC_CERT_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
+          APP: dist-app/${{ matrix.file }}
+        run: |
+          ID="-"
+          if [ -n "$MAC_CERT_P12" ]; then
+            KC="$RUNNER_TEMP/sign.keychain-db"; KCPW="$(uuidgen)"
+            echo "$MAC_CERT_P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+            security create-keychain -p "$KCPW" "$KC"
+            security set-keychain-settings -lut 3600 "$KC"
+            security unlock-keychain -p "$KCPW" "$KC"
+            security import "$RUNNER_TEMP/cert.p12" -k "$KC" -P "$MAC_CERT_PASSWORD" -T /usr/bin/codesign
+            rm -f "$RUNNER_TEMP/cert.p12"
+            security set-key-partition-list -S apple-tool:,apple: -s -k "$KCPW" "$KC" > /dev/null
+            # Apple's in-between certificate, in case the export holds only the owner's own one.
+            curl -sSfL https://www.apple.com/certificateauthority/DeveloperIDG2CA.cer -o "$RUNNER_TEMP/g2.cer"
+            security import "$RUNNER_TEMP/g2.cer" -k "$KC" || true
+            security list-keychains -d user -s "$KC" $(security list-keychains -d user | xargs)
+            ID="$(security find-identity -v -p codesigning "$KC" | grep -o '"Developer ID Application: [^"]*"' | head -1 | tr -d '"')"
+            [ -n "$ID" ] || { echo "MAC_CERT_P12 holds no 'Developer ID Application' certificate. Export that one from Keychain Access."; exit 1; }
+          else
+            echo "::warning::The Developer ID secrets aren't set, so the Mac app is signed ad hoc and the Mac will warn people."
+          fi
+          TS="--timestamp"; [ "$ID" = "-" ] && TS="--timestamp=none"
+          codesign --force --sign "$ID" --options runtime "$TS" --entitlements .github/release/entitlements.plist "$APP"
+          codesign --verify --strict --verbose=2 "$APP"
+          codesign --display --verbose=2 "$APP" 2>&1 | grep -E '^(Authority|TeamIdentifier|Runtime|flags)' || true
       - name: Smoke test (the app alone in an empty folder, with the sample project)
         shell: bash
         run: |
@@ -56,6 +89,32 @@ jobs:
           grep -q '"sample/recipe-box"' "$RUNNER_TEMP/board.json"
           curl -sf http://localhost:4399/ | grep -q '<title>Your project board</title>'
           echo "The app started and served the board."
+      - name: Have Apple check the Mac app (notarize; only for a release, and only once signed)
+        if: runner.os == 'macOS' && (startsWith(github.ref, 'refs/tags/v') || inputs.version != '')
+        env:
+          HAS_CERT: ${{ secrets.MAC_CERT_P12 != '' }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          APP: dist-app/${{ matrix.file }}
+        run: |
+          [ "$HAS_CERT" = "true" ] || { echo "Not signed with a Developer ID, so there is nothing for Apple to check."; exit 0; }
+          for v in APPLE_ID APPLE_TEAM_ID APPLE_APP_PASSWORD; do
+            [ -n "${!v}" ] || { echo "The $v secret isn't set, so Apple can't check the app."; exit 1; }
+          done
+          ditto -c -k --keepParent "$APP" "$RUNNER_TEMP/notarize.zip"
+          xcrun notarytool submit "$RUNNER_TEMP/notarize.zip" --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" \
+            --password "$APPLE_APP_PASSWORD" --wait --timeout 12m --output-format json > "$RUNNER_TEMP/notary.json" || true
+          cat "$RUNNER_TEMP/notary.json"; echo
+          STATUS="$(plutil -extract status raw -o - "$RUNNER_TEMP/notary.json" 2>/dev/null || echo unknown)"
+          if [ "$STATUS" != "Accepted" ]; then
+            ID="$(plutil -extract id raw -o - "$RUNNER_TEMP/notary.json" 2>/dev/null || true)"
+            [ -n "$ID" ] && xcrun notarytool log "$ID" --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_PASSWORD"
+            echo "Apple did not accept the app (status: $STATUS). The log above says why."; exit 1
+          fi
+          # A lone program can't carry Apple's ticket inside it (only apps, disk images and installers
+          # can), so a Mac checks with Apple online the first time it opens. This shows what it will see.
+          spctl --assess --type install -vv "$APP" 2>&1 || true
       - name: Zip the Mac app (a zip keeps it runnable after download)
         if: runner.os == 'macOS'
         run: cd dist-app && zip -q "${{ matrix.file }}.zip" "${{ matrix.file }}" && rm "${{ matrix.file }}"
@@ -81,9 +140,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ inputs.version || github.ref_name }}
+          MAC_SIGNED: ${{ secrets.MAC_CERT_P12 != '' }}
         run: |
           [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "The version must look like v0.1.0, not '$VERSION'."; exit 1; }
           if gh release view "$VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$VERSION" out/* --repo "$GITHUB_REPOSITORY" --clobber; exit 0
           fi
-          gh release create "$VERSION" out/* --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --draft --title "Progress board $VERSION" --notes "The progress board: a page on your own computer that shows how your project is going and what is waiting on you. Download Team-Board-mac-arm64.zip for a Mac with an Apple chip (M1 or later), or Team-Board-windows-x64.exe for Windows. It isn't signed yet, so your computer warns you the first time. On a Mac: double-click the zip, then the app, then open System Settings > Privacy & Security and click Open Anyway. On Windows: click More info, then Run anyway."
+          MAC="On a Mac: double-click the zip, then the app. The first time, the Mac asks if you are sure: click Open."
+          [ "$MAC_SIGNED" = "true" ] || MAC="The Mac file isn't signed, so the Mac warns you the first time: double-click the zip, then the app, then open System Settings > Privacy & Security and click Open Anyway."
+          gh release create "$VERSION" out/* --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --draft --title "Progress board $VERSION" --notes "The progress board: a page on your own computer that shows how your project is going and what is waiting on you. Download Team-Board-mac-arm64.zip for a Mac with an Apple chip (M1 or later), or Team-Board-windows-x64.exe for Windows. $MAC Windows warns you the first time because the Windows file isn't signed yet: click More info, then Run anyway."
