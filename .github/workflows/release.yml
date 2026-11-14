@@ -7,7 +7,7 @@
 # The Mac app is signed with the owner's Apple Developer ID and checked by Apple (notarized) when
 # the MAC_CERT_P12, MAC_CERT_PASSWORD, APPLE_ID, APPLE_TEAM_ID and APPLE_APP_PASSWORD secrets are
 # set. Without them it is signed ad hoc, as before, and the Mac warns people the first time.
-# The mac-app job builds "Team Board", the board as a Mac app that updates itself from this repo's
+# The mac_app job builds "Team Board", the board as a Mac app that updates itself from this repo's
 # published releases (desktop/, #33). It is signed and checked the same way; updates only work
 # between Developer ID signed versions.
 name: release
@@ -127,9 +127,9 @@ jobs:
           path: dist-app/*
           retention-days: 7
 
-  mac-app:
+  mac_app:
     runs-on: macos-latest   # Apple silicon
-    timeout-minutes: 25     # Apple's check usually takes a few minutes
+    timeout-minutes: 15     # the team keeps every job at 15 minutes or less (#10 §7); Apple usually answers in a few
     permissions:
       contents: read
     steps:
@@ -195,7 +195,7 @@ jobs:
           retention-days: 7
 
   release:
-    needs: [build, mac-app]
+    needs: [build, mac_app]
     if: startsWith(github.ref, 'refs/tags/v') || inputs.version != ''
     runs-on: ubuntu-latest
     timeout-minutes: 5
