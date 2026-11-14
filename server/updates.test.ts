@@ -72,3 +72,15 @@ describe("TeamCheck", () => {
     expect(ask).toHaveBeenCalledTimes(2);
   });
 });
+
+describe("TeamCheck, pages asking together", () => {
+  it("asks GitHub once when several pages ask before it answers", async () => {
+    let answer: (v: string | null) => void = () => {};
+    const ask = vi.fn(() => new Promise<string | null>((r) => { answer = r; }));
+    const check = new TeamCheck(ask, () => 0);
+    const all = Promise.all([1, 2, 3].map(() => check.latest("acme/app", null)));
+    answer("bbbbbbb");
+    expect(await all).toEqual(["bbbbbbb", "bbbbbbb", "bbbbbbb"]);
+    expect(ask).toHaveBeenCalledTimes(1);
+  });
+});

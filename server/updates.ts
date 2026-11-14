@@ -56,7 +56,8 @@ export async function newerTeam(repo: string, token: string | null): Promise<str
 
 /** newerTeam, asked at most once every six hours per project. */
 export class TeamCheck {
-  private readonly seen = new Map<string, { at: number; latest: string | null }>();
+  // Holds the answer, or the question still waiting for GitHub, so pages that ask together share one.
+  private readonly seen = new Map<string, { at: number; latest: Promise<string | null> }>();
   private readonly ask: (repo: string, token: string | null) => Promise<string | null>;
   private readonly clock: () => number;
   constructor(ask: (repo: string, token: string | null) => Promise<string | null> = newerTeam, clock: () => number = Date.now) {
@@ -67,7 +68,7 @@ export class TeamCheck {
   async latest(repo: string, token: string | null): Promise<string | null> {
     const hit = this.seen.get(repo);
     if (hit && this.clock() - hit.at < TEAM_CHECK_MS) return hit.latest;
-    const latest = await this.ask(repo, token);
+    const latest = this.ask(repo, token).catch(() => null);
     this.seen.set(repo, { at: this.clock(), latest });
     return latest;
   }
