@@ -5,7 +5,7 @@
 // Settings page (settings.ts), through `send` below.
 
 import { execFileSync } from "node:child_process";
-import { isProduction, type AppData, type Deploy, type GhComment, type GhItem, type GhRelease, type PullHead } from "./model.ts";
+import { isProduction, type AppData, type GhCommitLite, type Deploy, type GhComment, type GhItem, type GhRelease, type PullHead } from "./model.ts";
 
 /** GitHub couldn't be read. The message is a plain sentence for the page. */
 export class CantRead extends Error {}
@@ -239,4 +239,41 @@ export async function readApp(repo: string, token: string | null, openPulls: num
     }
   }
   return { releases: Array.isArray(releases) ? releases : [], deployments, pulls };
+}
+
+interface GhActivity { after?: string; timestamp?: string; activity_type?: string }
+interface GhCommit { sha?: string; commit?: { message?: string; author?: { name?: string; email?: string; date?: string } } }
+
+const NO_SHA = /^0+$/;
+const LATEST_READS = 3;
+
+/**
+ * The team's newest saved work on any branch: the repo's latest pushes, then each pushed commit.
+ * Early work (the brief, the first spec, the first build) lives on branches before any issue or
+ * label exists, so this is what shows progress in the first minutes. Never throws.
+ */
+export async function readLatest(repo: string, token: string | null): Promise<GhCommitLite[]> {
+  const acts = await optional<GhActivity[]>(`/repos/${repo}/activity?per_page=10`, token, []);
+  const shas: string[] = [];
+  for (const a of Array.isArray(acts) ? acts : []) {
+    const sha = a.after ?? "";
+    if (!sha || NO_SHA.test(sha) || a.activity_type === "branch_deletion" || shas.includes(sha)) continue;
+    shas.push(sha);
+    if (shas.length >= LATEST_READS) break;
+  }
+  const lite = (c: GhCommit): GhCommitLite | null => c?.commit ? ({
+    name: c.commit.author?.name ?? "", email: c.commit.author?.email ?? "",
+    message: c.commit.message ?? "", at: c.commit.author?.date ?? "",
+  }) : null;
+  if (!shas.length) {
+    // No push history to read (or not allowed): fall back to the main line's newest commits.
+    const recent = await optional<GhCommit[]>(`/repos/${repo}/commits?per_page=${LATEST_READS}`, token, []);
+    return (Array.isArray(recent) ? recent : []).map(lite).filter((c): c is GhCommitLite => c !== null);
+  }
+  const out: GhCommitLite[] = [];
+  for (const sha of shas) {
+    const c = lite(await optional<GhCommit>(`/repos/${repo}/commits/${sha}`, token, {}));
+    if (c) out.push(c);
+  }
+  return out;
 }

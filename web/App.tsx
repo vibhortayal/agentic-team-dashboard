@@ -1,6 +1,6 @@
 // Draws the board from /api/board. React escapes every piece of text, so nothing is shown as HTML.
 import { useCallback, useEffect, useState } from "react";
-import type { AppView, Board, Card, Column, Version } from "../server/model.ts";
+import type { AppView, Board, Card, Column, Latest, Version } from "../server/model.ts";
 import { Settings } from "./settings.tsx";
 import { PickProject, postJson, SignIn, type Status } from "./setup.tsx";
 
@@ -105,6 +105,30 @@ function WorkCard({ c, nowMs }: { c: Card; nowMs: number }) {
   );
 }
 
+/** The team's newest saved work, and what an empty board means, so progress shows from the first minutes. */
+function LatestWork({ board, nowMs }: { board: Board; nowMs: number }) {
+  const cards = board.columns.some((c) => c.cards.length) || board.needed.length > 0;
+  return (
+    <>
+      {!cards && (
+        <p className="empty">
+          {board.latest.length
+            ? "The team is getting started. Cards show up here once Ella opens your project's first task."
+            : "Nothing here yet. Talk to Ella to get your project started."}
+        </p>
+      )}
+      {!!board.latest.length && (
+        <div className="latest">
+          <h3>Latest from the team</h3>
+          <ul>{board.latest.map((l: Latest, i) => (
+            <li key={i}><span className="l-who">{l.who}</span> {l.what} <span className="l-when">{ago(l.at, nowMs)}</span></li>
+          ))}</ul>
+        </div>
+      )}
+    </>
+  );
+}
+
 function ColumnBox({ col, nowMs }: { col: Column; nowMs: number }) {
   return (
     <div className="col">
@@ -117,7 +141,7 @@ function ColumnBox({ col, nowMs }: { col: Column; nowMs: number }) {
 }
 
 const STOPPED: Omit<Board, "updated"> = {
-  repo: "", repo_url: "", needed: [], handled: [], columns: [], app: { live_url: null, live_at: null, versions: [] },
+  repo: "", repo_url: "", needed: [], handled: [], columns: [], app: { live_url: null, live_at: null, versions: [] }, latest: [],
   error: "The board stopped running on your computer. Ask Ella to start it again.",
 };
 
@@ -248,6 +272,7 @@ function BoardView({ status, onSettings, onChangeProject, onSignOut, onStop }: {
         <section aria-labelledby="progress-h">
           <h2 id="progress-h">What the team is doing</h2>
           <p className="help">Each card is one piece of work. It moves right as the team gets it done.</p>
+          {board && !board.error && <LatestWork board={board} nowMs={nowMs} />}
           {/* A problem means we know nothing current, so show no columns rather than stale ones. */}
           <div className="columns">{board && !board.error && board.columns.map((col) => <ColumnBox key={col.key} col={col} nowMs={nowMs} />)}</div>
         </section>

@@ -53,7 +53,14 @@ export interface Board {
   handled: Card[];
   columns: Column[];
   app: AppView;
+  /** The team's newest saved work on any branch, so progress shows before any issue exists. */
+  latest: Latest[];
 }
+
+// ---------- the team's latest saved work (commits), newest first ----------
+/** One commit as github.ts reads it. `email` tells a team agent (…@team.invalid) from a person. */
+export interface GhCommitLite { name: string; email: string; message: string; at: string }
+export interface Latest { who: string; what: string; at: string }
 
 // ---------- the app itself: versions and links (#11) ----------
 export interface GhRelease { tag_name?: string; name?: string; body?: string; draft?: boolean; prerelease?: boolean; published_at?: string | null; created_at?: string }
@@ -263,6 +270,34 @@ export function buildApp(app: AppData): AppView {
   return { live_url: live?.url ?? null, live_at: live?.at ?? null, versions };
 }
 
+const TEAM_EMAIL = /@team\.invalid$/i;
+const LATEST_MAX = 3;
+
+/** Who saved a commit, in the board's words: a team agent by its first name, anyone else as "You". */
+export function commitAuthor(name: string, email: string): string {
+  if (!TEAM_EMAIL.test(email.trim())) return "You";
+  const local = email.trim().split("@")[0].toLowerCase();
+  if (PEOPLE[local] && local !== "owner") return PEOPLE[local][0];
+  const byTitle = Object.entries(PEOPLE).find(([role]) => role !== "owner" && titleCase(role).toLowerCase() === name.trim().toLowerCase());
+  if (byTitle) return byTitle[1][0];
+  return name.trim() || "The team";
+}
+
+/** The newest few commits as plain lines: who, the first line of the message, and when. */
+export function buildLatest(commits: GhCommitLite[]): Latest[] {
+  const seen = new Set<string>();
+  const out: Latest[] = [];
+  for (const c of [...commits].sort((a, b) => b.at.localeCompare(a.at))) {
+    const what = plainMessage((c.message || "").split("\n")[0], 140);
+    const key = `${c.at}|${what}`;
+    if (!what || seen.has(key)) continue;
+    seen.add(key);
+    out.push({ who: commitAuthor(c.name, c.email), what, at: c.at });
+    if (out.length >= LATEST_MAX) break;
+  }
+  return out;
+}
+
 export function buildCard(item: GhItem, comments: GhComment[], app: AppData = NO_APP_DATA): Card {
   const labels = labelsOf(item);
   const stage = one(labels, "stage:");
@@ -329,7 +364,8 @@ export function buildCard(item: GhItem, comments: GhComment[], app: AppData = NO
 }
 
 export function buildBoard(repo: string, items: GhItem[], comments: Map<number, GhComment[]>,
-                           updated: string, error: string | null = null, app: AppData = NO_APP_DATA): Board {
+                           updated: string, error: string | null = null, app: AppData = NO_APP_DATA,
+                           commits: GhCommitLite[] = []): Board {
   const cards = items.map((it) => buildCard(it, comments.get(it.number) ?? [], app));
   const needed: Card[] = [];
   const handled: Card[] = [];
@@ -348,6 +384,7 @@ export function buildBoard(repo: string, items: GhItem[], comments: Map<number, 
     handled,
     columns: COLUMNS.map(([key, title, help]) => ({ key, title, help, cards: byColumn.get(key)! })),
     app: error ? buildApp(NO_APP_DATA) : buildApp(app),
+    latest: error ? [] : buildLatest(commits),
   });
 }
 

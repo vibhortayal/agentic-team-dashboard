@@ -26,7 +26,7 @@ The first time, click "Sign in with GitHub", copy the code it shows into GitHub,
 
 - **Waiting for you:** anything the team needs from you, in Ella's words, with a "Try it" link when there is a new version to try.
 - **Ella handled these herself:** small calls she made without asking you, greyed out, so you can check them.
-- **What the team is doing:** every piece of work by stage (getting ready, ready to build, being built, being checked, waiting for you, done), who has it and whether it passed its check.
+- **What the team is doing:** every piece of work by stage (getting ready, ready to build, being built, being checked, waiting for you, done), who has it and whether it passed its check. Above the cards, the team's three newest saved steps ("Priya: Add spec 001"), so you see progress from the first minutes, before any card exists.
 - **Your app:** the live link and the versions so far, once the app is online.
 - **Settings and keys:** the keys your app needs, each with why and where to get it. Paste a key and press Save, or press "Make one for me" where the board can make it up. If the board says it can't see your project or its settings, use its "Let the board see it" link and press Install on GitHub.
 

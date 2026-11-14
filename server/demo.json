@@ -239,5 +239,25 @@
     "head_sha": "9f3e2a1"
    }
   ]
- }
+ },
+ "commits": [
+  {
+   "name": "Ian",
+   "email": "ian@team.invalid",
+   "message": "Build the shopping list page",
+   "at": "2026-11-12T10:40:00Z"
+  },
+  {
+   "name": "Priya",
+   "email": "priya@team.invalid",
+   "message": "Add spec: share a recipe with family",
+   "at": "2026-11-12T10:05:00Z"
+  },
+  {
+   "name": "Engagement Lead",
+   "email": "engagement-lead@team.invalid",
+   "message": "Record owner approval of the brief",
+   "at": "2026-11-12T09:30:00Z"
+  }
+ ]
 }

@@ -135,3 +135,10 @@ a.try { display: inline-block; margin: 2px 0 6px; font-weight: 600; font-size: 1
 .check.ok { color: var(--ok); background: var(--ok-bg); white-space: nowrap; }
 .check.warn { color: var(--warn); background: var(--warn-bg); white-space: nowrap; }
 .need-count { font-weight: 600; }
+
+.latest { margin: 0 0 16px; }
+.latest h3 { font-size: 15px; margin: 0 0 6px; }
+.latest ul { list-style: none; margin: 0; padding: 0; }
+.latest li { padding: 4px 0; font-size: 15px; overflow-wrap: anywhere; }
+.latest .l-who { font-weight: 600; }
+.latest .l-when { color: var(--muted); white-space: nowrap; }
