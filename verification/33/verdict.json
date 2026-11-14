@@ -1,0 +1,144 @@
+{
+ "issue": 33,
+ "rev": "e1999fc57f11466fc205a548f7f82ed280b07f3d",
+ "base": "d9f0fee",
+ "verdict": "PASS",
+ "round": 1,
+ "spec": "docs/changes/33.md at 3f21c2d",
+ "checks": [
+  {
+   "id": "AC1-local-only",
+   "spec": "AC1 starts the board on this computer only (127.0.0.1)",
+   "command": "xvfb-run -a node verification/33/app.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC1-window",
+   "spec": "AC1 shows it in a window titled \"Team Board\"",
+   "command": "xvfb-run -a node verification/33/app.mjs; node verification/33/checks/ac4_ac6_main.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC1-no-tab",
+   "spec": "AC1 No Terminal window, no browser tab",
+   "command": "xvfb-run -a node verification/33/app.mjs (fake xdg-open log empty at start); release run 43532765073 smoke",
+   "result": "pass"
+  },
+  {
+   "id": "AC1-close-quits",
+   "spec": "AC1 Closing the window quits the app and stops the board",
+   "command": "xvfb-run -a node verification/33/app.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC2-same-board",
+   "spec": "AC2 Everything #8, #10, #11 and #16 show works the same in the window",
+   "command": "xvfb-run -a node verification/33/app.mjs (API and page equal to the one-file app's, Settings, start page); bash .github/team/run-checks.sh",
+   "result": "pass"
+  },
+  {
+   "id": "AC2-demo",
+   "spec": "AC2 --demo shows the sample project",
+   "command": "xvfb-run -a node verification/33/app.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC3-links-leave",
+   "spec": "AC3 A link to anything other than the board opens in the person's browser, never inside the app window",
+   "command": "xvfb-run -a node verification/33/app.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC4-locked-down",
+   "spec": "AC4 no Node in the page, context isolation and the sandbox on",
+   "command": "xvfb-run -a node verification/33/app.mjs; node verification/33/checks/ac4_ac6_main.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC5-one-copy",
+   "spec": "AC5 Opening the app again brings the open window forward instead of starting a second board",
+   "command": "xvfb-run -a node verification/33/app.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC6-checks",
+   "spec": "AC6 checks the latest published release when it opens and every 6 hours",
+   "command": "node verification/33/checks/ac4_ac6_main.mjs; node verification/33/checks/ac7_ac8_files.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC6-ask-restart-later",
+   "spec": "AC6 downloads in the background; asks Restart now? with Restart and Later; Later installs on quit",
+   "command": "node verification/33/checks/ac4_ac6_main.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC6-menu-and-quiet",
+   "spec": "AC6 Check for Updates… says up to date; failed checks quiet except from the menu",
+   "command": "node verification/33/checks/ac4_ac6_main.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC6-no-drafts",
+   "spec": "AC6 Draft releases are never offered",
+   "command": "node verification/33/checks/ac4_ac6_main.mjs; node verification/33/checks/ac7_ac8_files.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC7-build-names",
+   "spec": "AC7 Team-Board-<version>-arm64.dmg, .zip, .blockmap, latest-mac.yml",
+   "command": "release run 43532765073 mac-app job log; node verification/33/checks/ac7_ac8_files.mjs; local electron-builder --linux zip after npm version 0.2.0",
+   "result": "pass"
+  },
+  {
+   "id": "AC7-sign",
+   "spec": "AC7 signs and notarizes with the Developer ID secrets (ad hoc otherwise, with a warning)",
+   "command": "release run 43532765073 (ad hoc path and warning); node verification/33/checks/ac7_ac8_files.mjs (Developer ID path, from the workflow text only)",
+   "result": "pass"
+  },
+  {
+   "id": "AC7-smoke",
+   "spec": "AC7 starts the built app with the sample project and checks it serves the board",
+   "command": "release run 43532765073 smoke step",
+   "result": "pass"
+  },
+  {
+   "id": "AC7-attach",
+   "spec": "AC7 attaches the files to the draft release",
+   "command": "node verification/33/checks/ac7_ac8_files.mjs (workflow text; release job skipped in the run)",
+   "result": "pass"
+  },
+  {
+   "id": "AC8-unchanged",
+   "spec": "AC8 The one-file apps, the npx package and their tests are unchanged",
+   "command": "npm ci && npm run typecheck && npm test && npm run build && bash .github/team/run-checks.sh at base and head; npm pack --dry-run; git diff --name-only d9f0fee e1999fc",
+   "result": "pass"
+  },
+  {
+   "id": "S8-deps",
+   "spec": "§8 electron 45.2.3, electron-builder 26.18.1 (build only), electron-updater 6.8.12, in desktop/package.json only",
+   "command": "node verification/33/checks/ac7_ac8_files.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "S7-no-new-secrets",
+   "spec": "§7 No new ones",
+   "command": "node verification/33/checks/ac7_ac8_files.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "S4-scope",
+   "spec": "§3/§4 scope",
+   "command": "git diff --name-only d9f0fee e1999fc",
+   "result": "pass"
+  }
+ ],
+ "notes": [
+  "Release run 43532765073 ran at 4907efe; e1999fc changes only the Mac job's name (mac_app) and timeout (15 min). At 4907efe verification/10's sec7 check failed; at e1999fc all 38 checks pass.",
+  "The run had no Developer ID secrets and no version: Developer ID signing, notarization within 15 minutes, version stamping on the Mac and attaching to a draft release were not exercised. Stamping was run on Linux (Team-Board-0.2.0-x64.zip). The dmg itself is not signed by electron-builder's default; the app inside is.",
+  "The window loads http://localhost:<port>; the server listens on 127.0.0.1 only. A board link written with 127.0.0.1 opens in the browser.",
+  "After Later, a later 6-hourly check may ask again; a timer check overlapping a menu check can leave the menu check unanswered. No clause covers either.",
+  "Dark screenshots set the page's colour scheme directly (nativeTheme does not reach the page under xvfb); the app leaves themeSource at system.",
+  "Not tested (§9): a real signed update, a person opening the dmg. No Terminal window on a Mac follows from the .app bundle; the smoke test ran the binary directly."
+ ]
+}
