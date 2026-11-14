@@ -11,6 +11,7 @@ import { demoData, insideApp, pageBuilt, pageFile } from "./assets.ts";
 import { clientId, installUrl, pollSignIn, refresh, startSignIn } from "./auth.ts";
 import * as config from "./config.ts";
 import { CantRead, findToken, listProjects, readApp, readLatest, readProject, REPO_NAME, repoFromGit } from "./github.ts";
+import { appUpdate, restartForUpdate, TeamCheck, type Updates } from "./updates.ts";
 import { DEMO_SETTINGS, readSettings, saveSetting, SaveRefused, TOO_LONG } from "./settings.ts";
 import { buildBoard, errorBoard, NO_APP_DATA, type AppData, type Board, type GhComment, type GhCommitLite, type GhItem } from "./model.ts";
 
@@ -142,6 +143,7 @@ export function makeServer(source: Source, port: number, onStop: () => void = ()
   const session = source.session;
   const allowedHosts = new Set([`127.0.0.1:${port}`, `localhost:${port}`]);
   let signIn: Pending | null = null;
+  const teamCheck = new TeamCheck();
 
   return createServer(async (req, res) => {
     const send = (code: number, body: string | Buffer, type: string) => {
@@ -170,6 +172,9 @@ export function makeServer(source: Source, port: number, onStop: () => void = ()
         body = await readJson(req);
       } catch (e) {
         return json(e instanceof TooBig ? 413 : 400, { error: e instanceof TooBig ? TOO_LONG : "That request didn't make sense." });
+      }
+      if (path === "/api/app/restart") {
+        return restartForUpdate() ? json(200, { ok: true }) : json(400, { error: "There's no new version to install yet." });
       }
       if (session.demo && path !== "/api/stop") return json(400, { error: "The demo can't sign in, change project or save settings." });
 
@@ -255,6 +260,13 @@ export function makeServer(source: Source, port: number, onStop: () => void = ()
       });
     }
     if (path === "/api/board") return json(200, await source.get());
+    if (path === "/api/updates") {
+      // The demo shows what a newer team looks like; a real project asks GitHub.
+      const repo = session.demo ? "" : session.repo();
+      const latest = session.demo ? "a1b2c3d" : repo ? await teamCheck.latest(repo, await session.token()) : null;
+      const updates: Updates = { app: appUpdate(), team: latest ? { latest } : null };
+      return json(200, updates);
+    }
     if (path === "/api/settings") {
       if (session.demo) return json(200, DEMO_SETTINGS);
       const repo = session.repo();
@@ -307,6 +319,8 @@ export async function startBoard(
   });
   return { url: `http://localhost:${port}`, port, server };
 }
+
+export { setAppUpdate } from "./updates.ts";
 
 export async function main(argv = process.argv.slice(2)): Promise<void> {
   const { values } = parseArgs({

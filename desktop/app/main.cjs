@@ -3,13 +3,14 @@
 // New versions come from this repo's published GitHub releases (drafts are never offered).
 const { app, BrowserWindow, Menu, dialog, shell } = require("electron");
 const { autoUpdater } = require("electron-updater");
-const { startBoard } = require("./server/board.cjs");
+const { setAppUpdate, startBoard } = require("./server/board.cjs");
 
 const CHECK_EVERY_MS = 6 * 60 * 60 * 1000;
 const demo = process.argv.includes("--demo");
 let win = null;
 let boardUrl = "";
 let askedByPerson = false;
+let askedAbout = ""; // the version we already asked about, so a later check doesn't ask again
 
 if (!app.requestSingleInstanceLock()) {
   app.quit(); // a copy is already open: it comes forward instead (below)
@@ -117,6 +118,10 @@ autoUpdater.on("error", () => {
   askedByPerson = false;
 });
 autoUpdater.on("update-downloaded", async (info) => {
+  // The board shows "A new version is ready" with a Restart button until the person restarts.
+  setAppUpdate(info.version, () => autoUpdater.quitAndInstall());
+  if (askedAbout === info.version) return;
+  askedAbout = info.version;
   const { response } = await dialog.showMessageBox(win ?? undefined, {
     type: "info",
     buttons: ["Restart", "Later"],

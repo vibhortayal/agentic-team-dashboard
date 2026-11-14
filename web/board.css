@@ -49,7 +49,7 @@ ul { list-style: none; padding: 0; margin: 0; }
 .need .what { margin: 0; color: var(--muted); }
 .need .ask { margin: 4px 0 0; white-space: pre-line; background: var(--surface); border-radius: 10px; padding: 10px 12px; font-size: 16px; }
 .need .answer { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
-.need a.go, .live a.go {
+.need a.go, .live a.go, .newsitem button.go {
   align-self: start; margin-top: 6px; background: var(--accent); color: var(--accent-ink); text-decoration: none;
   padding: 8px 14px; border-radius: 999px; font-weight: 600; font-size: 15px;
 }
@@ -142,3 +142,8 @@ a.try { display: inline-block; margin: 2px 0 6px; font-weight: 600; font-size: 1
 .latest li { padding: 4px 0; font-size: 15px; overflow-wrap: anywhere; }
 .latest .l-who { font-weight: 600; }
 .latest .l-when { color: var(--muted); white-space: nowrap; }
+
+.news { display: grid; gap: 10px; margin-bottom: 24px; }
+.newsitem { background: var(--ok-bg); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 18px; display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+.newsitem p { margin: 0; flex: 1 1 280px; }
+.newsitem .problem-line { flex-basis: 100%; }

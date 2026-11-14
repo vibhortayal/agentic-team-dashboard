@@ -1,6 +1,7 @@
 // Draws the board from /api/board. React escapes every piece of text, so nothing is shown as HTML.
 import { useCallback, useEffect, useState } from "react";
 import type { AppView, Board, Card, Column, Latest, Version } from "../server/model.ts";
+import type { Updates } from "../server/updates.ts";
 import { Settings } from "./settings.tsx";
 import { PickProject, postJson, SignIn, type Status } from "./setup.tsx";
 
@@ -193,6 +194,7 @@ function BoardView({ status, onSettings, onChangeProject, onSignOut, onStop }: {
   status: Status; onSettings: () => void; onChangeProject: () => void; onSignOut: () => void; onStop: () => void;
 }) {
   const [board, setBoard] = useState<Board | null>(null);
+  const [updates, setUpdates] = useState<Updates | null>(null);
   const [busy, setBusy] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
 
@@ -202,6 +204,8 @@ function BoardView({ status, onSettings, onChangeProject, onSignOut, onStop }: {
       const r = await fetch("/api/board", { cache: "no-store" });
       if (!r.ok) throw new Error(String(r.status));
       setBoard((await r.json()) as Board);
+      const u = await fetch("/api/updates", { cache: "no-store" }).catch(() => null);
+      if (u?.ok) setUpdates((await u.json()) as Updates);
     } catch {
       setBoard({ ...STOPPED, updated: new Date().toISOString() });
     } finally {
@@ -241,6 +245,8 @@ function BoardView({ status, onSettings, onChangeProject, onSignOut, onStop }: {
       </header>
 
       <main>
+        <WhatsNew updates={updates} />
+
         {board?.error && (
           <section className="problem">
             <h2>We can't see your project right now</h2>
@@ -280,6 +286,36 @@ function BoardView({ status, onSettings, onChangeProject, onSignOut, onStop }: {
 
       <footer className="foot">The board runs on your computer. It changes your project only when you save a setting.</footer>
     </>
+  );
+}
+
+// A new version of this app waiting to be installed (Mac app only), and a newer team for this project.
+function WhatsNew({ updates }: { updates: Updates | null }) {
+  const [problem, setProblem] = useState("");
+  if (!updates?.app && !updates?.team) return null;
+  const restart = async () => {
+    try {
+      await postJson("/api/app/restart");
+    } catch (e) {
+      setProblem(e instanceof Error ? e.message : "That didn't work. Quit Team Board and open it again.");
+    }
+  };
+  return (
+    <section className="news" aria-label="What's new">
+      {updates.app && (
+        <div className="newsitem">
+          <p><strong>A new version of Team Board is ready.</strong> It takes a few seconds and keeps everything you set up.</p>
+          <button type="button" className="go" onClick={() => void restart()}>Restart now</button>
+          {problem && <p className="problem-line">{problem}</p>}
+        </div>
+      )}
+      {updates.team && (
+        <div className="newsitem">
+          <p><strong>Your team has learned some new things.</strong> Next time you chat with Ella, say "update the team".
+            She'll tell you what changed before anything else.</p>
+        </div>
+      )}
+    </section>
   );
 }
 
