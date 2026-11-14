@@ -1,0 +1,36 @@
+AC6 a packaged app
+  ok   checks once when it opens (1)
+  ok   a timer every 6 hours ([21600000])
+  ok   the timer checks again (2)
+  ok   downloads in the background (autoDownload on)
+  ok   Later installs it when the app quits (autoInstallOnAppQuit on)
+  ok   prereleases are not offered
+  ok   a found update downloads without asking anything
+  ok   a failed start or timer check stays quiet
+  ok   nothing new after a start or timer check stays quiet
+  ok   asks "A new version of Team Board is ready. Restart now?" ("A new version of Team Board is ready. Restart now?")
+  ok   with Restart and Later (["Restart","Later"])
+  ok   Later does not restart
+  ok   the app menu has "Check for Updates…"
+  ok   the menu item checks
+  ok   after the menu check it says it's up to date ("Team Board is up to date.")
+  ok   after the menu check a failure says it couldn't check ("Team Board couldn't check for updates.")
+  ok   the next timer failure is quiet again
+AC9 the board's notice and asking once per version
+  ok   nothing for the board before a version has downloaded
+  ok   the board is told 0.2.0 is ready ("0.2.0")
+  ok   the app's own box asks (1)
+  ok   the same version again (later checks): no second box (1)
+  ok   the board still shows it
+  ok   a newer version asks once more and the board shows it (2, 0.3.0)
+  ok   nothing restarted yet (Later)
+  ok   the board's Restart now restarts into it
+  ok   Restart installs and restarts
+  ok   no network at start: quiet, no crash (null)
+AC6 started from source (not packaged)
+  ok   does not check for updates
+AC4 the window
+  ok   one window
+  ok   titled Team Board
+  ok   no Node in the page, context isolation and the sandbox on ({"contextIsolation":true,"nodeIntegration":false,"sandbox":true})
+ac4_ac6_main: all ok

@@ -1,0 +1,53 @@
+{
+  "name": "team-board-app",
+  "productName": "Team Board",
+  "private": true,
+  "version": "0.1.0",
+  "description": "The progress board as a Mac app that keeps itself up to date.",
+  "author": "agentic-team",
+  "license": "Apache-2.0",
+  "main": "app/main.cjs",
+  "scripts": {
+    "board": "node ../scripts/build-desktop.mjs",
+    "start": "npm run board && electron . --demo",
+    "dist": "npm run board && electron-builder --mac --arm64 --publish never"
+  },
+  "dependencies": {
+    "electron-updater": "6.8.12"
+  },
+  "devDependencies": {
+    "electron": "45.2.3",
+    "electron-builder": "26.18.1"
+  },
+  "build": {
+    "appId": "io.github.vibhortayal.teamboard",
+    "productName": "Team Board",
+    "artifactName": "Team-Board-${version}-${arch}.${ext}",
+    "files": [
+      "app/**",
+      "package.json"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "hardenedRuntime": true,
+      "notarize": true
+    },
+    "dmg": {
+      "title": "Team Board"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "vibhortayal",
+        "repo": "agentic-team-dashboard"
+      }
+    ]
+  }
+}

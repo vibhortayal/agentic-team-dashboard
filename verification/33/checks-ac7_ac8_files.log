@@ -1,0 +1,33 @@
+§8 dependencies, in desktop/package.json only
+  ok   electron 45.2.3, build only (45.2.3)
+  ok   electron-builder 26.18.1, build only (26.18.1)
+  ok   electron-updater 6.8.12 inside the app (6.8.12)
+  ok   nothing else ships inside the app (electron-updater)
+  ok   lock file pins electron 45.2.3 (45.2.3)
+  ok   lock file pins electron-builder 26.18.1 (26.18.1)
+  ok   lock file pins electron-updater 6.8.12 (6.8.12)
+  ok   none of them at the root
+AC6 the update feed
+  ok   GitHub releases of this repo, public, no token ([{"provider":"github","owner":"vibhortayal","repo":"agentic-team-dashboard"}])
+  ok   only published releases (releaseType default: release)
+AC7 the release build
+  ok   files named Team-Board-<version>-<arch>.<ext> (Team-Board-${version}-${arch}.${ext})
+  ok   a disk image and a zip (dmg,zip)
+  ok   arm64 Mac build (npm run board && electron-builder --mac --arm64 --publish never)
+  ok   signed builds are notarized, with the hardened runtime
+  ok   release.yml has the mac_app job
+  ok   the job keeps to 15 minutes (15)
+  ok   the app gets the release's version
+  ok   signs and notarizes with the #28 secrets
+  ok   ad hoc without them, with a warning that updates need the signed build
+  ok   smoke test: starts the built app with the sample project and checks it serves the board
+  ok   uploads *.dmg
+  ok   uploads *.zip
+  ok   uploads *.blockmap
+  ok   uploads latest-mac.yml
+  ok   the release job waits for it and attaches every file to the draft release
+  ok   §7 no new secrets (MAC_CERT_P12,MAC_CERT_PASSWORD,APPLE_ID,APPLE_TEAM_ID,APPLE_APP_PASSWORD,GITHUB_TOKEN)
+  ok   the Mac job cannot write to the repo
+AC8 / §3 the one-file apps and npx package are unchanged
+  ok   the one-file app and npx entry are where they were
+ac7_ac8_files: all ok

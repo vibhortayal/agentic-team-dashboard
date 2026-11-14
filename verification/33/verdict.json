@@ -1,0 +1,229 @@
+{
+ "issue": 33,
+ "rev": "daa74d88edaab41d77eb0c9cc7a5e7a0fc13612e",
+ "base": "d9f0fee",
+ "verdict": "PASS",
+ "round": 3,
+ "spec": "docs/changes/33.md draft v2 (at daa74d8, unchanged since ec0e18c)",
+ "checks": [
+  {
+   "id": "AC1-local-only",
+   "spec": "AC1 starts the board on this computer only (127.0.0.1)",
+   "command": "xvfb-run -a node verification/33/app.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC1-window",
+   "spec": "AC1 shows it in a window titled \"Team Board\"",
+   "command": "xvfb-run -a node verification/33/app.mjs; node verification/33/checks/ac4_ac6_main.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC1-no-tab",
+   "spec": "AC1 No Terminal window, no browser tab",
+   "command": "xvfb-run -a node verification/33/app.mjs (fake xdg-open log empty at start); release run 43532765073 smoke",
+   "result": "pass"
+  },
+  {
+   "id": "AC1-close-quits",
+   "spec": "AC1 Closing the window quits the app and stops the board",
+   "command": "xvfb-run -a node verification/33/app.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC2-same-board",
+   "spec": "AC2 Everything #8, #10, #11 and #16 show works the same in the window",
+   "command": "xvfb-run -a node verification/33/app.mjs (API and page equal to the one-file app's, Settings, start page); bash .github/team/run-checks.sh",
+   "result": "pass"
+  },
+  {
+   "id": "AC2-demo",
+   "spec": "AC2 --demo shows the sample project",
+   "command": "xvfb-run -a node verification/33/app.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC3-links-leave",
+   "spec": "AC3 A link to anything other than the board opens in the person's browser, never inside the app window",
+   "command": "xvfb-run -a node verification/33/app.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC4-locked-down",
+   "spec": "AC4 no Node in the page, context isolation and the sandbox on",
+   "command": "xvfb-run -a node verification/33/app.mjs; node verification/33/checks/ac4_ac6_main.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC5-one-copy",
+   "spec": "AC5 Opening the app again brings the open window forward instead of starting a second board",
+   "command": "xvfb-run -a node verification/33/app.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC6-checks",
+   "spec": "AC6 checks the latest published release when it opens and every 6 hours",
+   "command": "node verification/33/checks/ac4_ac6_main.mjs; node verification/33/checks/ac7_ac8_files.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC6-ask-restart-later",
+   "spec": "AC6 downloads in the background; asks Restart now? with Restart and Later; Later installs on quit",
+   "command": "node verification/33/checks/ac4_ac6_main.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC6-menu-and-quiet",
+   "spec": "AC6 Check for Updates… says up to date; failed checks quiet except from the menu",
+   "command": "node verification/33/checks/ac4_ac6_main.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC6-no-drafts",
+   "spec": "AC6 Draft releases are never offered",
+   "command": "node verification/33/checks/ac4_ac6_main.mjs; node verification/33/checks/ac7_ac8_files.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC7-build-names",
+   "spec": "AC7 Team-Board-<version>-arm64.dmg, .zip, .blockmap, latest-mac.yml",
+   "command": "release run 43532765073 mac-app job log; node verification/33/checks/ac7_ac8_files.mjs; local electron-builder --linux zip after npm version 0.2.0",
+   "result": "pass"
+  },
+  {
+   "id": "AC7-sign",
+   "spec": "AC7 signs and notarizes with the Developer ID secrets (ad hoc otherwise, with a warning)",
+   "command": "release run 43532765073 (ad hoc path and warning); node verification/33/checks/ac7_ac8_files.mjs (Developer ID path, from the workflow text only)",
+   "result": "pass"
+  },
+  {
+   "id": "AC7-smoke",
+   "spec": "AC7 starts the built app with the sample project and checks it serves the board",
+   "command": "release run 43532765073 smoke step",
+   "result": "pass"
+  },
+  {
+   "id": "AC7-attach",
+   "spec": "AC7 attaches the files to the draft release",
+   "command": "node verification/33/checks/ac7_ac8_files.mjs (workflow text; release job skipped in the run)",
+   "result": "pass"
+  },
+  {
+   "id": "AC8-unchanged",
+   "spec": "AC8 The one-file apps, the npx package and their tests are unchanged",
+   "command": "npm ci && npm run typecheck && npm test && npm run build && bash .github/team/run-checks.sh at base and head; npm pack --dry-run; git diff --name-only d9f0fee daa74d8",
+   "result": "pass"
+  },
+  {
+   "id": "S8-deps",
+   "spec": "§8 electron 45.2.3, electron-builder 26.18.1 (build only), electron-updater 6.8.12, in desktop/package.json only",
+   "command": "node verification/33/checks/ac7_ac8_files.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "S7-no-new-secrets",
+   "spec": "§7 No new ones",
+   "command": "node verification/33/checks/ac7_ac8_files.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "S4-scope",
+   "spec": "§3/§4 scope",
+   "command": "git diff --name-only d9f0fee daa74d8",
+   "result": "pass"
+  },
+  {
+   "id": "AC9-board-notice",
+   "spec": "AC9 the board shows \"A new version of Team Board is ready.\" with a Restart now button that restarts into it",
+   "command": "xvfb-run -a node verification/33/app.mjs; node verification/33/checks/ac4_ac6_main.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC9-once-per-version",
+   "spec": "AC9 The app asks with its own box only once per version",
+   "command": "node verification/33/checks/ac4_ac6_main.mjs; app.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC9-outside",
+   "spec": "AC9 Outside the Mac app nothing shows",
+   "command": "node verification/33/checks/ac9_ac10_board.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC10-behind-current",
+   "spec": "AC10 .team/VERSION behind agentic-team-oss main: says to tell Ella \"update the team\"",
+   "command": "node verification/33/checks/ac9_ac10_board.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC10-read-only",
+   "spec": "AC10 The board only reads",
+   "command": "node verification/33/checks/ac9_ac10_board.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC10-6-hours",
+   "spec": "AC10 asks GitHub at most every six hours per project (reads one after another)",
+   "command": "node verification/33/checks/ac9_ac10_board.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "F1-AC10-reads-together",
+   "spec": "AC10 It asks GitHub at most every six hours per project",
+   "command": "node verification/33/checks/f1_team_check_together.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC10-quiet",
+   "spec": "AC10 stays quiet when the project has no team or GitHub doesn't answer",
+   "command": "node verification/33/checks/ac9_ac10_board.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC10-demo",
+   "spec": "AC10 The demo shows the notice",
+   "command": "node verification/33/checks/ac9_ac10_board.mjs; app.mjs",
+   "result": "pass"
+  }
+ ],
+ "notes": [
+  "Round 3: F1 repro first (4/4), then full regression: npm test 95 passed, typecheck and build ok, 40/40 verifier checks, app.mjs 64/64 on the rebuilt app.",
+  "The diff since round 2 is server/updates.ts (TeamCheck caches the pending question) and one unit test; covered by existing rows, none added.",
+  "The release workflow was last run (43532765073) on round 1's code; the Mac build and smoke test have not run on this revision.",
+  "A quiet failure is cached for six hours, hiding the team notice until the next check (allowed: stays quiet).",
+  "The window loads http://localhost:<port> while the server listens on 127.0.0.1 only; a board link written with 127.0.0.1 opens in the browser.",
+  "A 6-hourly check that starts while a menu check is waiting can leave the menu check unanswered.",
+  "Not tested: a real signed update and a person opening the dmg (§9); the Developer ID signing and notarization path, notarization inside 15 minutes; setting the version and attaching to a draft release on the Mac; the dmg file itself is not signed by default."
+ ],
+ "previous": {
+  "round": 2,
+  "rev": "ec0e18c19b4f19470419e9720a0452e2b5176db7",
+  "verdict": "BLOCK",
+  "findings": [
+   {
+    "id": "F1",
+    "row": "AC10 6 hours",
+    "clause": "AC10: It asks GitHub at most every six hours per project.",
+    "repro": "npm run build && node verification/33/checks/f1_team_check_together.mjs",
+    "expected": "2 (or 5) GET /api/updates at the same moment for one project: 1 .team/VERSION read and 1 agentic-team-oss compare read",
+    "actual": "2 reads: 2 VERSION + 2 compare; 5 reads: 5 + 5 (the 6-hour cache is set only after GitHub answers, so reads in flight each ask)"
+   }
+  ],
+  "evidence": "e974e1f",
+  "previous": {
+   "round": 1,
+   "rev": "e1999fc57f11466fc205a548f7f82ed280b07f3d",
+   "verdict": "PASS",
+   "evidence": "e2b35e5",
+   "notes": [
+    "Release run 43532765073 ran at 4907efe; e1999fc changes only the Mac job's name (mac_app) and timeout (15 min). At 4907efe verification/10's sec7 check failed; at e1999fc all 38 checks pass.",
+    "The run had no Developer ID secrets and no version: Developer ID signing, notarization within 15 minutes, version stamping on the Mac and attaching to a draft release were not exercised. Stamping was run on Linux (Team-Board-0.2.0-x64.zip). The dmg itself is not signed by electron-builder's default; the app inside is.",
+    "The window loads http://localhost:<port>; the server listens on 127.0.0.1 only. A board link written with 127.0.0.1 opens in the browser.",
+    "After Later, a later 6-hourly check may ask again; a timer check overlapping a menu check can leave the menu check unanswered. No clause covers either.",
+    "Dark screenshots set the page's colour scheme directly (nativeTheme does not reach the page under xvfb); the app leaves themeSource at system.",
+    "Not tested (§9): a real signed update, a person opening the dmg. No Terminal window on a Mac follows from the .app bundle; the smoke test ran the binary directly."
+   ]
+  }
+ }
+}

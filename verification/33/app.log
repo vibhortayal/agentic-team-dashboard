@@ -1,0 +1,73 @@
+AC1, AC2, AC3, AC4 with --demo
+  ok   no board running before the app starts
+  ok   AC1 one window (1)
+  ok   AC1 window title is "Team Board" ("Team Board")
+  ok   AC1 the window is shown
+       window shows http://localhost:4321/
+  ok   AC1 the window shows the board on this computer (localhost:4321)
+       listening: 127.0.0.1:4321
+  ok   AC1 one board, bound to 127.0.0.1 only
+  ok   AC1 the board answers on 127.0.0.1
+  ok   AC1 the board does not answer on this machine's other address (192.0.2.2)
+  ok   AC1 nothing handed to the browser at start ([])
+  ok   AC2 --demo shows the sample project (sample/recipe-box)
+  ok   AC2 /api/board in the app equals the one-file app's (time fields aside)
+  ok   AC2 the page HTML is the one-file app's
+  ok   AC2 /api/settings answers the same (200 vs 200)
+  ok   AC2 /api/projects answers the same (502 vs 502)
+  ok   AC2 /api/me answers the same (404 vs 404)
+  ok   AC2 /api/session answers the same (404 vs 404)
+  ok   AC2 the window shows the sample project's board
+       page starts: "Your project\n\nRecipe box\nLast checked just now\nCheck now\nSettings and keys\n\nYour team has learned some new things. Next time you chat with Ella, say \"update the team\". She'll tell you what changed before anything else.\n\nWaiting for you\n\nThe team can't go on with these until you look.\n\nA plan is read"
+  ok   demo narrow light: no sideways scroll
+  ok   demo wide light: no sideways scroll
+  ok   demo narrow dark: no sideways scroll
+  ok   demo wide dark: no sideways scroll
+  ok   AC2 Settings opens in the window
+  ok   settings narrow light: no sideways scroll
+  ok   settings wide light: no sideways scroll
+  ok   settings narrow dark: no sideways scroll
+  ok   settings wide dark: no sideways scroll
+  ok   the window follows the Mac's light or dark setting (themeSource system)
+  ok   AC4 no Node in the page {"require":"undefined","process":"undefined","module":"undefined","Buffer":"undefined"}
+  ok   AC4 nodeIntegration false, contextIsolation true, sandbox true
+  ok   AC3 the demo board has outside links (2)
+       https://sign-up.preview.recipe-box.example.com/: clicked on screen
+  ok   AC3 clicking the board's link https://sign-up.preview.recipe-box.example.com/ opens it in the browser, window stays (["http://127.0.0.1:4321/"] opened ["https://sign-up.preview.recipe-box.example.com/"])
+       https://recipe-box.example.com/: clicked on screen
+  ok   AC3 clicking the board's link https://recipe-box.example.com/ opens it in the browser, window stays (["http://127.0.0.1:4321/"] opened ["https://recipe-box.example.com/"])
+  ok   AC3 a target=_blank link to GitHub opens in the browser (["https://github.com/sample/recipe-box/issues/1"])
+  ok   AC3 a target=_blank link to GitHub: the window stays on the board, no second window (["http://127.0.0.1:4321/"])
+  ok   AC3 window.open to a try-it link opens in the browser (["https://recipe-box-pr-3.example.app/"])
+  ok   AC3 window.open to a try-it link: the window stays on the board, no second window (["http://127.0.0.1:4321/"])
+  ok   AC3 a same-window link to a help page opens in the browser (["https://docs.github.com/en/get-started"])
+  ok   AC3 a same-window link to a help page: the window stays on the board, no second window (["http://127.0.0.1:4321/"])
+  ok   AC3 the page moving itself to another site opens in the browser (["http://example.com/help"])
+  ok   AC3 the page moving itself to another site: the window stays on the board, no second window (["http://127.0.0.1:4321/"])
+  ok   AC3 a link to the board itself stays in the window (http://localhost:4321/?again=1)
+  ok   AC10 the demo shows the newer-team notice in the window
+  ok   AC9 no new-version notice before one has downloaded
+  ok   AC9 the board shows "A new version of Team Board is ready."
+  ok   AC9 with a Restart now button
+  ok   AC9 the app's own box asked once for 9.9.9 (["A new version of Team Board is ready. Restart now?"])
+  ok   news narrow light: no sideways scroll
+  ok   news wide light: no sideways scroll
+  ok   news narrow dark: no sideways scroll
+  ok   news wide dark: no sideways scroll
+  ok   AC9 Restart now restarts into it (quitAndInstall called 1)
+  ok   AC9 nothing handed to the browser
+  ok   AC5 the second copy ends by itself (0, 197 ms)
+  ok   AC5 still one board (1 listening)
+  ok   AC5 the open window comes forward {"n":1,"min":false,"vis":true}
+  ok   AC1 closing the window quits the app
+  ok   AC1 the board is stopped
+AC2 without --demo (sign-in and the project picker)
+  ok   AC2 with no project chosen the app answers as the one-file app ({"repo":"","repo_url":"","updated":"2026-11-14T00:43:31Z","error":"Pick which project to show.","needed":[],"handled":[],"columns":[{"key":"getting-ready","titl)
+       page: "Your project board\n\nWelcome\nFinding your project…\n\nYour GitHub sign-in didn't work. Ask Ella to help you sign in again.\n\nTry again\nThe board runs on your computer. It changes your project only when you save a setting."
+  ok   AC2 the window shows the start page (sign-in / project picker)
+  ok   start narrow light: no sideways scroll
+  ok   start wide light: no sideways scroll
+  ok   start narrow dark: no sideways scroll
+  ok   start wide dark: no sideways scroll
+  ok   AC1 closing the window quits the app (no project)
+app.mjs: all ok

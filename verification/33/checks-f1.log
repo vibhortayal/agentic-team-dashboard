@@ -1,0 +1,5 @@
+  ok   2 reads at the same moment ask GitHub once (got 1 VERSION reads and 1 main reads)
+  ok   2 reads: each shows the team notice
+  ok   5 reads at the same moment ask GitHub once (got 1 VERSION reads and 1 main reads)
+  ok   5 reads: each shows the team notice
+F1 AC10 reads together: 4/4 passed
