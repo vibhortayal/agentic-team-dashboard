@@ -11,15 +11,23 @@ Copy the section you need into the path shown. Keep each document to a page; if 
 Approved: <link to owner's message> · Date: <YYYY-MM-DD> · Profile: <research | prototype | hobby | internal | production | other>
 Read: <repos, docs, research reviewed> · Not verified: <what couldn't be checked>
 
+## Plan in short  Readable in a minute, in everyday words; the sections below are the detail.
+                  What we'll build (two or three sentences) · What you'll need (the table below, one line) ·
+                  What you'll do (your steps, minutes each) · Who's on the team and what skills they bring (one line each, why) ·
+                  When I'll need you (the checkpoints)
 ## Goal            The outcome in the owner's words, then one plain sentence.
 ## Who it's for    Users and what changes for them.
 ## How we'll know  Two to four measurable signals.
 ## Scope           In: ... Out: ...
 ## Constraints     Spend ceiling, paid services allowed, time, data and privacy, platforms. Owner-stated only.
+## What you'll need | Need | In plain words | Recommended | Other options | Monthly cost | Who sets it up |
+                  Hosting, data, sign-in, email, AI model keys, domain, app store developer accounts and their fees: whatever applies. Options and prices checked this week, with links.
+                  Recommended = easiest managed option for the owner's skill level.
 ## What exists     Code, research and decisions to reuse, with links. What was rejected before and why.
 ## Advice          Risks, the recommended approach, alternatives, anything we advise against.
 ## Open questions  | Question | Proposed default | Who answers | Blocking? |
-## Team            | Agent | Hired? | Why |  First playbook and why. Autonomy stage.
+## Team            | Agent | Hired? | Why | Skills (team's own, plus any adopted for this project) |
+                  First playbook and why. Autonomy stage. Each adopted skill: source at its commit, licence, Quinn's verdict.
 ```
 
 ## Research brief
@@ -52,6 +60,8 @@ Ticket: <issue link> · Approved: <owner's message> · Date: <YYYY-MM-DD> · Sta
 | # | Given | When | Then |
 | AC1 | | | |
 ## Budget         Size S/M/L · Estimate $low–$high · Cap <n> sessions, <r> fix rounds (stop with a typed blocker, never exceed)
+## Help pages     Help pages users read that this changes, with the new wording. "None" only if nothing a user sees or does changes.
+                 One acceptance row checks the shipped page says it.
 ## Proof command  The one command that shows it works, which Vera re-runs.
 ## Out of scope
 ## Risks          Red-zone paths touched, or none.
@@ -87,7 +97,8 @@ Cost $low–$high · Agent time <range> · Calendar time <range>, assuming <owne
 | # | Ticket | Size | Tiers | Cost low | Cost high | Cap (sessions, rounds) |
 
 Assumptions that move the number most: ...
-Not included: hosting, paid services, anything outside agent runs unless listed.
+Running costs: | Service | Plan | Monthly $ |  from the brief's "What you'll need"; free tiers listed with their limits.
+Not included: anything not listed above.
 Changes since last version: | Date | Change | Cost | Time | Approved |
 ```
 
@@ -109,7 +120,7 @@ The close-out report (`reports/close-out.md`) uses the same shape for the whole 
 
 ## Decision record
 
-`docs/decisions/DR-<n>.md` · Priya owns them; the owner approves stack and red-zone decisions.
+`docs/decisions/DR-<n>.md` · Priya owns them, and Arjun writes his design choices in a multi-unit build; the owner approves stack and red-zone decisions.
 
 ```markdown
 # DR-<n>: <title>
@@ -135,6 +146,9 @@ Summary: better, worse or flat, and the one thing the owner should know.
 | Measure | This month | Last month | Direction |
 Change failure rate · Rework within 30 days · Lint and type errors · Complexity over limit · Duplicated blocks ·
 Copy vs refactor · BLOCK rounds per ticket (avg, worst) · Typed blockers by type · Owner send-backs
+
+Headroom: load and spend against the limits in the spec and each service's plan, as a share.
+Coming due (next 90 days): | Date | What | Who acts |  domain and certificate renewals, store SDK and target-version deadlines, AI model retirements, runtime end-of-life, free-tier limits, cards on file, the next restore drill.
 
 Unhealthy modules: | Module | Why | Next cleanup |
 Design notes seen more than once (propose a rule for each).

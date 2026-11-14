@@ -17,15 +17,19 @@ Numbered, Given/When/Then, each checkable from this spec alone.
 | AC1 | | | | |
 
 ## 6. Constraints (owner-stated only)
-## 7. Non-functional targets (measurable: latency, cost, privacy, availability)
+## 7. Non-functional targets (measurable: latency, cost, availability)
+Expected load (users, requests or AI calls at peak) and the 10x figure the load test uses. Uptime target (default 99.5% a month for production). Speed budgets for the product type. How much data the product can afford to lose and how fast it must be back. The analytics events that measure the brief's "How we'll know" signals (Priya uses the measure-instrumentation-spec skill).
+## 7a. Data list (production and internal)
+| Personal data | Why | Where kept | Outside services that see it | Kept for | User can download / delete |
 ## 8. Data model
 ## 9. API contract (OpenAPI 3.x or AsyncAPI, linked or inline)
 ## 10. Screens (each mapped to API operations)
 ## 11. AI components (component, metric, golden set, pass mark; omit if none)
 ## 12. Units (order and dependencies)
-## 13. Risks (from the critique, each with its proof or gate)
+## 13. Risks (from the critique and the threat list, each with its proof or gate; AI abuse cases where the type is ai)
 ## 14. Open questions
 ## 15. Release (preview target, criteria checked on the preview, smoke steps, rollback, monitoring)
+## 16. Help pages (where users read how to use it, and each page's wording for this version; one acceptance row per page)
 
 ---
 

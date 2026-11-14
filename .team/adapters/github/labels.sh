@@ -20,7 +20,7 @@ for b in unclear access too-big impossible; do
 done
 mk mode:ticket ededed "Implementer + Verifier per ticket"
 mk mode:multi-unit ededed "Architect coordinates several units"
-for a in gate-change tests deps red-zone; do
+for a in gate-change tests deps red-zone spend rounds; do
   mk "$a-approved" 0e8a16 "Owner approval; counts only when the owner's own account adds it"
 done
 mk verified 0e8a16 "Set by the Verifier on the PR after approving; re-runs the gates"

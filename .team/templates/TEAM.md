@@ -3,11 +3,15 @@
 This project is staffed from agentic-team (`<repo URL>`), installed in `.team/`.
 
 - **Profile:** `<research | prototype | hobby | internal | production | other: reason>`, set at intake (see `.team/playbooks/engagement.md`, Project profiles). Changes only on the owner's message.
+- **Product type:** `<web | mobile | ai | api | other: reason>` (one or more), set at intake (see `.team/playbooks/engagement.md`, Product types).
 - Team version: `<tag or commit>`. Roles and playbooks at that version win over anything here about how agents work.
 - Agent tools in use: `<the agent tools this project uses>`; installed with the generic adapter plus the matching tool adapter. State follows `.team/docs/github-state.md`.
+- Help pages: `<where users read how to use the product, e.g. docs/help/ or the in-app help screen; "none" for research>`. The Product Manager owns their wording.
 - Spec of record: `<paths, e.g. docs/specs/v1.md, docs/specs/v1-openapi.yaml>`; decision records in `docs/decisions/`.
-- Main branch: `<main>`. Only the owner merges to it, except what the autonomy stage below allows.
-- Autonomy stage: `0` while the gates are built, then `1` (owner merges everything). Moves to 2 or 3 only on the owner's explicit message, linked here: `<link>`, after the entry criteria in the foundation playbook are met (override the numbers here if needed). `CODEOWNERS` is what enforces it.
+- Main branch: `<main>`, the test version. Nothing merges to it without the owner's yes, except what the autonomy stage below allows.
+- Who presses merge: `Ella, after the owner's yes in chat` (default) or `the owner, on GitHub`. If the owner presses it, set the repository variable `TEAM_RECEIPTS=off`.
+- Involvement: `<just build it | teach me as we go>` (the owner's choice at intake; they can change it any time by telling Ella). It sets how much Ella explains, nothing else.
+- Autonomy stage: `0` while the gates are built, then `1` (every merge waits for the owner's yes). Moves to 2 or 3 only on the owner's explicit message, linked here: `<link>`, after the entry criteria in the foundation playbook are met (override the numbers here if needed). `CODEOWNERS` is what enforces it.
   - Stage 2: copy, working notes and new tests auto-merge on green CI.
   - Stage 3: also features and fixes inside owned paths auto-merge on green CI.
   - The red zone, gate files and approved documents never auto-merge at any stage.
@@ -42,7 +46,17 @@ Build sessions count prepare, build and verify sessions that end with a team com
 | budget-analyst | Bea | estimates, per-ticket caps, spend ledger | |
 | ops | Otto | foundation, housekeeping, releases, production and incidents | |
 
-Delete rows for roles this project does not use.
+Delete rows for roles this project does not use. The owner may rename any agent, Ella included: change the Persona cell. That name wins over the default names in the team's files; the Role column stays the id that tools, labels and commits use.
+
+## Skills adopted for this project
+
+Every role carries its team skills (`.team/skills/`, listed in each role file). Skills added for this project only, from the practice and skill review (`.team/playbooks/engagement.md`), approved with the brief and installed in a `gate/skills` PR:
+
+| Skill | Used by | When | Source at commit | Licence | Scan report | Quinn's verdict |
+|---|---|---|---|---|---|---|
+| `<name>` | `<roles>` | `<the task it's for>` | `<link at exact commit>` | `<licence>` | `research/skill-scans/<name>.json` | `<ADOPT, or ADOPT WITH NOTES: what the role ignores>` |
+
+Delete this section if the project adopted none.
 
 ## Units
 
@@ -71,6 +85,7 @@ See `.team/playbooks/production.md`, Release.
 - Version scheme: `<semver; version file or latest tag>`. Ops tags each production release after the watch window.
 - Preview deploy command (per PR, or the single staging slot): `<command>`
 - Preview address pattern: `<url>`
+- Staging address and deploy-on-merge workflow (internal and production): `<url, workflow>`
 - Deployed-version check: `<how to read the deployed revision>`
 - Smoke checks: `<commands>`
 - Production deploy: `<CI workflow name>`, behind the `production` environment's owner approval
@@ -79,7 +94,7 @@ See `.team/playbooks/production.md`, Release.
 
 ## Operate (internal and production profiles)
 
-See `.team/playbooks/production.md`. Monitoring services and their monthly cost (owner-approved): `<uptime, errors, logs, backups, cost alerts>`. Where user reports arrive: `<email, form>`.
+See `.team/playbooks/production.md`. Monitoring services and their monthly cost (owner-approved): `<uptime, errors, logs, backups, cost alerts, analytics>`. Where user reports arrive: `<email, form>`. Launch readiness waivers: `<link to each decision log entry, or none>`.
 
 ## Project-specific rules
 

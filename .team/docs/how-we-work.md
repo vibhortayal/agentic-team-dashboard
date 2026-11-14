@@ -1,6 +1,6 @@
 # How we work
 
-Every change starts as a small written spec with testable criteria. It's built as a ticket that flows through build, an independent check and automated gates, with a limit on work in progress. The owner merges it and it ships in small steps. There are no sprints, story points or standups. Agents swarm on reading, research and review, never on writing: each piece of code has one builder.
+Every change starts as a small written spec with testable criteria. It's built as a ticket that flows through build, an independent check and automated gates, with a limit on work in progress. The owner tries it, says yes, Ella merges it, and it ships in small steps. There are no sprints, story points or standups. Agents swarm on reading, research and review, never on writing: each piece of code has one builder.
 
 **[M]** marks a claim from a measured study, **[P]** one from practitioner or vendor guidance.
 
@@ -8,7 +8,8 @@ Every change starts as a small written spec with testable criteria. It's built a
 Idea ─▶ Intake (Ella) ─▶ Spec (Priya) ─▶ Spec review (fresh agents) ─▶ Owner approves
   ─▶ Tickets on the board (WIP limit)
   ─▶ Build (Ian) ─▶ Verify (Vera, checks from the spec first) ─▶ CI gates   [BLOCK: up to 3 rounds]
-  ─▶ PASS + green CI + preview ─▶ Owner merges ─▶ Release (Otto, owner approves) ─▶ Operate
+  ─▶ PASS + green CI + preview ─▶ Owner tries it, says yes ─▶ Ella merges (test version)
+  ─▶ Owner says "put it live" ─▶ Release (Otto) ─▶ Operate
 ```
 
 Around it sits the [engagement](../playbooks/engagement.md) layer: an estimate before work starts, priced change requests, weekly status and re-baselining.
@@ -46,6 +47,21 @@ Around it sits the [engagement](../playbooks/engagement.md) layer: an estimate b
 | Release planning | Autonomy stage review with evidence ([foundation](../playbooks/foundation.md#staged-autonomy)) | When criteria are met |
 
 Nothing wakes an agent by itself. Each handoff ends with the next prompt to paste, and the cadences start when the owner pastes a prompt from the README or a scheduler in the tool runs it.
+
+## Words you'll see
+
+| Word | Meaning |
+|---|---|
+| Spec, change spec | A short written description of a change with checkable acceptance criteria, approved before any code |
+| Ticket | One unit of work: a GitHub issue, a branch and a pull request |
+| PASS, BLOCK | Vera's verdict on an exact version of the work. BLOCK lists what's wrong |
+| Typed blocker | An agent's honest "I can't do this": unclear request, missing access, too big, or impossible |
+| Gate | A CI check the agents can't change, such as "existing tests weren't edited" |
+| Red zone | Risky paths (sign-in, payments, migrations, infrastructure) that always need your approval |
+| Autonomy stage | How much merges without you, widened one area at a time on evidence |
+| Elephant, fish | Elephants remember a project through files; fish start fresh each time so they stay independent |
+| Dark run | A build that runs without questions to you, except the decisions only you can make |
+| Profile | The kind of project (prototype, production and so on), which sets how much process applies |
 
 ## Not settled
 

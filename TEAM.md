@@ -3,7 +3,7 @@
 This project is staffed from agentic-team (https://github.com/vibhortayal/agentic-team-oss), installed in `.team/`.
 
 - **Profile:** prototype (the owner's choice, 2026-11-10; Ella confirms it at intake) (see `.team/playbooks/engagement.md`, Project profiles). Changes only on the owner's message.
-- Team version: `13e79e1`. Roles and playbooks at that version win over anything here about how agents work.
+- Team version: `49cf82c`. Roles and playbooks at that version win over anything here about how agents work.
 - Agent tools in use: Claude Code; installed with the generic adapter plus the matching tool adapter. State follows `.team/docs/github-state.md`.
 - Spec of record: `<paths, e.g. docs/specs/v1.md, docs/specs/v1-openapi.yaml>`; decision records in `docs/decisions/`.
 - Main branch: `<main>`. Only the owner merges to it, except what the autonomy stage below allows.
