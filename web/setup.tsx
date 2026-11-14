@@ -78,17 +78,30 @@ export function SignIn({ status, onDone }: { status: Status; onDone: () => void 
   );
 }
 
-export function PickProject({ status, onDone }: { status: Status; onDone: () => void }) {
-  const [projects, setProjects] = useState<Array<{ repo: string; private: boolean }> | null>(null);
+interface Project { repo: string; private: boolean; team: boolean }
+
+const LESSON = "https://agents.teamnightshift.org/learn/first-project.html";
+
+/** Pick which project to show. Team projects (with TEAM.md) come first; others wait behind "Show all".
+ *  On the first run, a single team project opens straight away. */
+export function PickProject({ status, first, onDone }: { status: Status; first: boolean; onDone: () => void }) {
+  const [projects, setProjects] = useState<Project[] | null>(null);
+  const [all, setAll] = useState(false);
   const [typed, setTyped] = useState("");
   const [problem, setProblem] = useState("");
+  const [round, setRound] = useState(0);
 
   useEffect(() => {
+    setProjects(null);
+    setProblem("");
     fetch("/api/projects").then(async (r) => {
-      const d = (await r.json()) as { projects?: Array<{ repo: string; private: boolean }>; error?: string };
-      if (d.projects) setProjects(d.projects); else setProblem(d.error ?? "GitHub didn't answer. Try again.");
+      const d = (await r.json()) as { projects?: Project[]; error?: string };
+      if (!d.projects) { setProblem(d.error ?? "GitHub didn't answer. Try again."); return; }
+      const team = d.projects.filter((p) => p.team);
+      if (first && team.length === 1) { void choose(team[0].repo); return; }
+      setProjects(d.projects);
     }).catch(() => setProblem("The board stopped running. Start it again."));
-  }, []);
+  }, [round]);
 
   async function choose(repo: string) {
     setProblem("");
@@ -100,25 +113,60 @@ export function PickProject({ status, onDone }: { status: Status; onDone: () => 
     }
   }
 
+  const team = projects?.filter((p) => p.team) ?? [];
+  const others = projects?.filter((p) => !p.team) ?? [];
+  const list = (items: Project[]) => (
+    <ul className="projects">
+      {items.map((p) => (
+        <li key={p.repo}><button type="button" onClick={() => void choose(p.repo)}>{p.repo}{p.private ? " (private)" : ""}</button></li>
+      ))}
+    </ul>
+  );
+
+  if (projects === null) {
+    return (
+      <section className="setup">
+        <h2>Finding your project…</h2>
+        {!problem && <p>Looking for projects that use the team.</p>}
+        {problem && <><p className="problem-line">{problem}</p><button type="button" onClick={() => setRound(round + 1)}>Try again</button></>}
+      </section>
+    );
+  }
+
   return (
     <section className="setup">
-      <h2>Which project should the board show?</h2>
-      {projects === null && !problem && <p>Looking for your projects…</p>}
-      {projects && projects.length > 0 && (
-        <ul className="projects">
-          {projects.map((p) => (
-            <li key={p.repo}><button type="button" onClick={() => void choose(p.repo)}>{p.repo}{p.private ? " (private)" : ""}</button></li>
-          ))}
-        </ul>
+      {team.length > 0 ? (
+        <>
+          <h2>Which project should the board show?</h2>
+          {list(team)}
+        </>
+      ) : (
+        <>
+          <h2>No project yet</h2>
+          <p>Your project shows up here once Ella has made it. Go talk to Ella first.</p>
+          <ol className="steps">
+            <li>Open the Claude app, click <b>Code</b> and open your project's folder.</li>
+            <li>Paste the setup line from <a href={LESSON} target="_blank" rel="noopener">Your first project</a>, with your idea.</li>
+            <li>When Ella says your project is ready, come back and press <b>Check again</b>.</li>
+          </ol>
+          <button type="button" className="primary" onClick={() => setRound(round + 1)}>Check again</button>
+          {status.install_url && (
+            <p>Ella already made it? <a href={safe(status.install_url)} target="_blank" rel="noopener">Let the board see it on GitHub</a>, then press Check again.</p>
+          )}
+        </>
       )}
-      {projects && projects.length === 0 && <p>The board can't see any projects yet.</p>}
-      {status.install_url && (
+      {team.length > 0 && status.install_url && (
         <p>Project missing? <a href={safe(status.install_url)} target="_blank" rel="noopener">Let the board see it on GitHub</a>, then come back here.</p>
       )}
-      <form onSubmit={(e) => { e.preventDefault(); void choose(typed); }} className="typed">
-        <label htmlFor="repo">Or type its name, like <i>your-name/your-app</i></label>
-        <div><input id="repo" value={typed} onChange={(e) => setTyped(e.target.value)} autoComplete="off" /><button type="submit">Show it</button></div>
-      </form>
+      <details className="all" open={all} onToggle={(e) => setAll((e.target as HTMLDetailsElement).open)}>
+        <summary>Show all your projects{others.length ? ` (${others.length} more)` : ""}</summary>
+        {others.length > 0 && <p className="help">These don't use the team, so the board has little to show for them.</p>}
+        {others.length > 0 && list(others)}
+          <form onSubmit={(e) => { e.preventDefault(); void choose(typed); }} className="typed">
+            <label htmlFor="repo">Or type its name, like <i>your-name/your-app</i></label>
+            <div><input id="repo" value={typed} onChange={(e) => setTyped(e.target.value)} autoComplete="off" /><button type="submit">Show it</button></div>
+          </form>
+        </details>
       {problem && <p className="problem-line">{problem}</p>}
     </section>
   );

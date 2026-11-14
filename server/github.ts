@@ -134,14 +134,41 @@ export async function readProject(repo: string, token: string | null): Promise<{
   return { items, comments };
 }
 
-export interface Project { repo: string; private: boolean }
+export interface Project { repo: string; private: boolean; team: boolean }
 
-/** Projects this sign-in can see: through the board's GitHub App if it has one, else every repo you can read. */
+const TEAM_CHECKS = 100; // look inside at most this many projects
+const AT_ONCE = 8;
+
+/** True when the project uses the team: it has TEAM.md at its root. */
+async function usesTeam(repo: string, token: string): Promise<boolean> {
+  try {
+    return (await look(`/repos/${repo}/contents/TEAM.md`, token)).status === 200;
+  } catch {
+    return false;
+  }
+}
+
+/** Projects this sign-in can see, team projects first: through the board's GitHub App if it has one, else every repo you can read. */
 export async function listProjects(token: string): Promise<Project[]> {
-  const shape = (r: { full_name: string; private?: boolean }): Project => ({ repo: r.full_name, private: !!r.private });
+  const found = await seenRepos(token);
+  const team = new Array<boolean>(found.length).fill(false);
+  let next = 0;
+  const worker = async () => {
+    while (next < Math.min(found.length, TEAM_CHECKS)) {
+      const i = next++;
+      team[i] = await usesTeam(found[i].repo, token);
+    }
+  };
+  await Promise.all(Array.from({ length: AT_ONCE }, worker));
+  const all = found.map((p, i) => ({ ...p, team: team[i] }));
+  return [...all.filter((p) => p.team), ...all.filter((p) => !p.team)];
+}
+
+async function seenRepos(token: string): Promise<Array<{ repo: string; private: boolean }>> {
+  const shape = (r: { full_name: string; private?: boolean }) => ({ repo: r.full_name, private: !!r.private });
   try {
     const inst = await get<{ installations: Array<{ id: number }> }>("/user/installations?per_page=100", token);
-    const out: Project[] = [];
+    const out: Array<{ repo: string; private: boolean }> = [];
     for (const i of inst.installations) {
       const r = await get<{ repositories: Array<{ full_name: string; private?: boolean }> }>(`/user/installations/${i.id}/repositories?per_page=100`, token);
       out.push(...r.repositories.map(shape));
