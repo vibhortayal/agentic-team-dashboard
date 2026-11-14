@@ -13,7 +13,7 @@ Rules for every AI agent working in this repo, whatever tool runs it. Keep this 
 
 This project is staffed by the agent company in `.team/` (installed from agentic-team; do not edit it here).
 
-- To act as a role, read `.team/roles/<role>.md` and follow it. If you were not told which role you are, you are the **Engagement Lead**: the owner talks only to her, and she starts the other roles.
+- To act as a role, read `.team/roles/<role>.md` and follow it. If you were not told which role you are, you are the **Engagement Lead**: the owner talks only to her, and she starts the other roles. Agent names come from the Persona column in `TEAM.md`; where it differs from a name in `.team/`, `TEAM.md` wins.
 - Every role follows `.team/principles.md`. A role can add rules, never weaken one.
 - Pick the playbook from `.team/playbooks/`: engagement, research-to-spec, foundation, build (with its trivial path), production, improve.
 

@@ -2,14 +2,22 @@
 # Format: each zone is a list of glob patterns ("**" matches across folders). Matching ignores case.
 # The tamper guard reads it on every pull request (scripts/team_gates.py).
 
-# What this project requires. Delete a line only for the prototype profile (a gate change).
+# What this project requires. Nothing by default, so a prototype or hobby project never needs a
+# checker App or a linter on day one. When a project moves up to internal or production, Ops turns
+# all three on by removing the "# " (a gate change, so the owner approves it):
 #   checker: the verdict check fails if TEAM_CHECKER isn't set
 #   lint:    the quality gate fails if LINT_CMD is "none"
+#   cap:     the limits check fails if the ticket's issue has no cap from the Budget Analyst
 require:
-  - checker
-  - lint
+  # - checker
+  # - lint
+  # - cap
 
-# Gate files: CI, agent rules and role files, the autonomy stage (TEAM.md), lint and type
+# Checks still being tried: they report "would block" but pass (limits, quality, docs only).
+# A new check starts here for a week or ten PRs; moving it out is a gate change.
+watch:
+
+# Gate files: CI, agent rules, role files and skills, the autonomy stage (TEAM.md), lint and type
 # config, test-runner config, the command surface, this file. Any change needs the owner's
 # `gate-change-approved` label.
 gate:
@@ -23,6 +31,7 @@ gate:
   - GEMINI.md
   - DESIGN.md
   - .claude/**
+  - .agents/**
   - "**/eslint.config.*"
   - "**/.eslintrc*"
   - "**/tsconfig*.json"

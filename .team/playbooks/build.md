@@ -3,7 +3,7 @@
 Builds an approved spec one bounded ticket at a time, with someone other than the builder checking the work.
 
 **Who:** Ella brings requests in and decisions out. Priya runs each ticket, Ian builds, Vera checks, Bea prices. Arjun joins only for multi-unit builds, Max when quality is a score, Otto beside (never inside).
-**Ends with** a PR carrying evidence in `verification/`. The owner merges; Otto releases ([production](production.md)).
+**Ends with** a PR carrying evidence in `verification/`, merged by Ella after the owner tries it and says yes; Otto releases ([production](production.md)).
 
 ## A ticket from start to finish
 
@@ -17,9 +17,9 @@ Builds an approved spec one bounded ticket at a time, with someone other than th
 | 6. Prepare | Vera | Writes checks from the spec before any code exists | No |
 | 7. Build | Ian | Builds, self-checks, opens the PR | No |
 | 8. Verify | Vera | PASS or BLOCK on that exact revision; on BLOCK, back to step 7 (three rounds at most) | No, but on internal and production projects the owner may have to start Vera's approving session |
-| 9. Merge | Owner, through Ella | With PASS and green CI, Ella brings the PR, its evidence and the preview | **Yes** |
+| 9. Try and merge | Owner, through Ella | With PASS and green CI, Ella sends the preview link with Vera's "try this" steps and her [share check](../skills/share-check/SKILL.md) result. The owner tries it and says yes, or what to change; a change goes back to step 7 on the same PR. On a yes Ella posts the receipt and merges ([approvals](../roles/engagement-lead.md#approvals-they-say-yes-you-press-the-button)). The owner never reads the diff or opens GitHub | **Yes** |
 
-A trivial change skips steps 3 to 5: the owner's request is the approval, and Priya's handoff comment holds the criteria, so they're pinned even if the issue body changes. Ian builds and Vera checks against that comment. A full spec goes through [research to spec](research-to-spec.md) and is approved by merging its `docs/` PR, then Priya splits it into tickets or a multi-unit dispatch.
+A trivial change skips steps 3 to 5: the owner's request is the approval, and Priya's handoff comment holds the criteria, so they're pinned even if the issue body changes. Ian builds and Vera checks against that comment. A full spec goes through [research to spec](research-to-spec.md) and is approved by the owner's yes, after which Ella merges its `docs/` PR; then Priya splits it into tickets or a multi-unit dispatch.
 
 ## Who runs the handoffs
 
@@ -40,11 +40,13 @@ Every handoff is still a team comment on the issue ([github-state](../docs/githu
 
 Before anyone adds a third agent to the default, Max tests whether it beats the pair on frozen cases.
 
+**Don't build on a red `main`.** If CI on `main` is failing, Priya starts no new ticket and Otto fixes `main` first, so a ticket's failures are its own.
+
 ## Accepting a verdict
 
 The coordinator (Priya in ticket mode, Arjun in multi-unit) acts on a verdict like this:
 
-- **PASS:** Vera hands it to you. Wait for the gates to re-run after her `verified` label, and accept only with green CI at the exact head she reviewed. Then set `stage:review` with `needs-human` + `human:merge` for Ella.
+- **PASS:** Vera hands it to you. Mark the PR ready for review (the gate skips drafts) and wait for the gates to run, and accept only with green CI at the exact head she reviewed. Fill in the PR's **receipt** line from the verdict and the issue: checks passed, BLOCK rounds, sessions against the cap, and cost (Bea's figure, or "unknown" until her ledger row). Then set `stage:review` with `needs-human` + `human:merge` for Ella.
 - **BLOCK:** goes straight back to Ian, not through you. You can't waive a finding; if you dispute one with evidence and can't agree with Vera, record both views for the owner.
 - **INCONCLUSIVE:** get the missing evidence from whoever has it.
 - **Third BLOCK:** Vera hands it to you. Stop with a typed blocker and the evidence, and say whether you think the spec or the approach is wrong. If a finding survived a round with nothing new, look again at the requirement before blaming the build.
@@ -63,12 +65,12 @@ A change is trivial when one sentence describes its diff and it touches no gate,
 The separation rules (builder never accepts, checks from the spec, PASS plus green CI, three BLOCKs then a typed blocker, read-only tests, the repo is the handoff) are in [principles](../principles.md#separation-of-duties). On top of them:
 
 - Nobody gets build work until the owner approved the spec version. Spec approval isn't approval to deploy.
-- Vera writes needed changes to existing tests on a `verify/<issue>-tests` branch, and the owner approves them.
+- Vera writes needed changes to existing tests on a `verify/<issue>-tests` branch, and the owner says yes to them (Ella explains each in plain words).
 - Ian can't touch approved documents (brief, specs, decision records he didn't add); the tamper guard enforces it.
 
 ## Who merges
 
-The owner, through a required code-owner review, until a zone reaches stage 2 or 3 ([staged autonomy](foundation.md#staged-autonomy)). The red zone never auto-merges. Agents never change the stage. Without a release section in `TEAM.md`, the run stops at the merged PR.
+Ella, right after the owner's yes and its receipt, until a zone reaches stage 2 or 3 ([staged autonomy](foundation.md#staged-autonomy)). The red zone never auto-merges. Agents never change the stage. Without a release section in `TEAM.md`, the run stops at the merged PR.
 
 ## Dark run
 
