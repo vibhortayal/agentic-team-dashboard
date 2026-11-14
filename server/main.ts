@@ -295,6 +295,19 @@ async function listen(source: Source, first: number, onStop: () => void): Promis
   throw new Error(`Ports ${first} to ${first + 9} are all busy. Close another copy of the board and try again.`);
 }
 
+/** Starts the board's server on this computer and gives its address. The Mac app (desktop/) uses this too. */
+export async function startBoard(
+  opts: { demo?: boolean; repo?: string; folderRepo?: string; port?: number } = {},
+  onStop: () => void = () => {},
+): Promise<{ url: string; port: number; server: Server }> {
+  const source = new Source(new Session({ demo: opts.demo, repo: opts.repo ?? "", folderRepo: opts.folderRepo ?? "" }));
+  const { port, server } = await listen(source, opts.port ?? 4321, () => {
+    server.close();
+    onStop();
+  });
+  return { url: `http://localhost:${port}`, port, server };
+}
+
 export async function main(argv = process.argv.slice(2)): Promise<void> {
   const { values } = parseArgs({
     args: argv,
@@ -309,13 +322,10 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   }
   // From source in a project folder, show that project; the downloaded app asks instead.
   const folderRepo = values.demo || insideApp || values.repo ? "" : repoFromGit() ?? "";
-  const source = new Source(new Session({ demo: values.demo, repo: values.repo ?? "", folderRepo }));
-  const { port, server } = await listen(source, Number(values.port), () => {
+  const { url } = await startBoard({ demo: values.demo, repo: values.repo, folderRepo, port: Number(values.port) }, () => {
     console.log("Board stopped. You can close this window.");
-    server.close();
     process.exit(0);
   });
-  const url = `http://localhost:${port}`;
   console.log(`Your progress board is open at ${url}`);
   console.log("Keep this window open while you use it. Close it to stop the board.");
   if (!values["no-open"]) openBrowser(url);

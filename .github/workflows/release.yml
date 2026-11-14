@@ -7,6 +7,9 @@
 # The Mac app is signed with the owner's Apple Developer ID and checked by Apple (notarized) when
 # the MAC_CERT_P12, MAC_CERT_PASSWORD, APPLE_ID, APPLE_TEAM_ID and APPLE_APP_PASSWORD secrets are
 # set. Without them it is signed ad hoc, as before, and the Mac warns people the first time.
+# The mac-app job builds "Team Board", the board as a Mac app that updates itself from this repo's
+# published releases (desktop/, #33). It is signed and checked the same way; updates only work
+# between Developer ID signed versions.
 name: release
 
 on:
@@ -124,8 +127,75 @@ jobs:
           path: dist-app/*
           retention-days: 7
 
+  mac-app:
+    runs-on: macos-latest   # Apple silicon
+    timeout-minutes: 25     # Apple's check usually takes a few minutes
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.18"
+      - run: npm ci
+      - run: npm ci
+        working-directory: desktop
+      - name: Give the app the release's version
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.version != ''
+        working-directory: desktop
+        env:
+          VERSION: ${{ inputs.version || github.ref_name }}
+        run: |
+          [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "The version must look like v0.1.0, not '$VERSION'."; exit 1; }
+          npm version --no-git-tag-version --allow-same-version "${VERSION#v}"
+      - name: Build, sign and (for a release) have Apple check the app
+        working-directory: desktop
+        env:
+          CSC_LINK: ${{ secrets.MAC_CERT_P12 }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          RELEASING: ${{ startsWith(github.ref, 'refs/tags/v') || inputs.version != '' }}
+        run: |
+          EXTRA=()
+          if [ -z "$CSC_LINK" ]; then
+            echo "::warning::The Developer ID secrets aren't set, so Team Board is signed ad hoc: the Mac warns people and the app can't update itself."
+            unset CSC_LINK CSC_KEY_PASSWORD
+            export CSC_IDENTITY_AUTO_DISCOVERY=false
+            EXTRA+=(-c.mac.identity=- -c.mac.hardenedRuntime=false -c.mac.notarize=false)
+          elif [ "$RELEASING" != "true" ]; then
+            EXTRA+=(-c.mac.notarize=false)   # only releases go to Apple
+          fi
+          npm run dist -- "${EXTRA[@]}"
+          ls -la release
+      - name: Smoke test (open the built app with the sample project)
+        run: |
+          APP="desktop/release/mac-arm64/Team Board.app"
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          test -f "$APP/Contents/Resources/app-update.yml"
+          "$APP/Contents/MacOS/Team Board" --demo > "$RUNNER_TEMP/app.log" 2>&1 &
+          PID=$!
+          for i in $(seq 1 40); do
+            if curl -sf http://localhost:4321/api/board > "$RUNNER_TEMP/board.json"; then break; fi
+            sleep 1
+          done
+          kill "$PID" || true
+          cat "$RUNNER_TEMP/app.log"
+          grep -q '"sample/recipe-box"' "$RUNNER_TEMP/board.json"
+          echo "Team Board opened and served the board."
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Team-Board-mac-app
+          path: |
+            desktop/release/*.dmg
+            desktop/release/*.zip
+            desktop/release/*.blockmap
+            desktop/release/latest-mac.yml
+          retention-days: 7
+
   release:
-    needs: build
+    needs: [build, mac-app]
     if: startsWith(github.ref, 'refs/tags/v') || inputs.version != ''
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -148,4 +218,4 @@ jobs:
           fi
           MAC="On a Mac: double-click the zip, then the app. The first time, the Mac asks if you are sure: click Open."
           [ "$MAC_SIGNED" = "true" ] || MAC="The Mac file isn't signed, so the Mac warns you the first time: double-click the zip, then the app, then open System Settings > Privacy & Security and click Open Anyway."
-          gh release create "$VERSION" out/* --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --draft --title "Progress board $VERSION" --notes "The progress board: a page on your own computer that shows how your project is going and what is waiting on you. Download Team-Board-mac-arm64.zip for a Mac with an Apple chip (M1 or later), or Team-Board-windows-x64.exe for Windows. $MAC Windows warns you the first time because the Windows file isn't signed yet: click More info, then Run anyway."
+          gh release create "$VERSION" out/* --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --draft --title "Progress board $VERSION" --notes "The progress board: a page on your own computer that shows how your project is going and what is waiting on you. On a Mac with an Apple chip (M1 or later), download the Team-Board .dmg, open it and drag Team Board to Applications; it keeps itself up to date after that. Team-Board-mac-arm64.zip is the older one-file version. On Windows, download Team-Board-windows-x64.exe. $MAC Windows warns you the first time because the Windows file isn't signed yet: click More info, then Run anyway."
