@@ -14,7 +14,7 @@ const log = (ok, what) => { console.log((ok ? "  ok   " : "  FAIL ") + what); if
 const tick = () => new Promise((r) => setTimeout(r, 20));
 
 function world({ packaged, checkFails = false, dialogAnswer = 1 }) {
-  const w = { dialogs: [], errorBoxes: [], checks: 0, quitAndInstall: 0, intervals: [], windows: [], menu: null, quits: 0, opened: [] };
+  const w = { appUpdate: null, dialogs: [], errorBoxes: [], checks: 0, quitAndInstall: 0, intervals: [], windows: [], menu: null, quits: 0, opened: [] };
   const app = new EventEmitter();
   let ready;
   Object.assign(app, {
@@ -41,7 +41,11 @@ function world({ packaged, checkFails = false, dialogAnswer = 1 }) {
     checkForUpdates: () => { w.checks++; return checkFails ? Promise.reject(new Error("net::ERR_INTERNET_DISCONNECTED")) : Promise.resolve(null); },
     quitAndInstall: () => { w.quitAndInstall++; },
   });
-  const board = { startBoard: async () => ({ url: "http://localhost:4321", port: 4321, server: { close() {} } }) };
+  // The built board: startBoard, and setAppUpdate, which the board's "A new version is ready" notice reads (AC9).
+  const board = {
+    startBoard: async () => ({ url: "http://localhost:4321", port: 4321, server: { close() {} } }),
+    setAppUpdate: (version, restart) => { w.appUpdate = { version, restart }; },
+  };
   const realLoad = Module._load;
   const realSetInterval = globalThis.setInterval;
   globalThis.setInterval = (fn, ms) => { w.intervals.push({ fn, ms }); return 0; };
@@ -97,6 +101,24 @@ console.log("AC6 a packaged app");
   log(w.dialogs.length === n + 2 && /couldn.?t check/i.test(w.dialogs.at(-1)?.message ?? ""), `after the menu check a failure says it couldn't check (${JSON.stringify(w.dialogs.at(-1)?.message)})`);
   w.autoUpdater.emit("error", new Error("again")); await tick();
   log(w.dialogs.length === n + 2, "the next timer failure is quiet again");
+}
+console.log("AC9 the board's notice and asking once per version");
+{
+  const w = world({ packaged: true });
+  await w.ready();
+  log(w.appUpdate === null, "nothing for the board before a version has downloaded");
+  w.autoUpdater.emit("update-downloaded", { version: "0.2.0" }); await tick();
+  log(w.appUpdate?.version === "0.2.0", `the board is told 0.2.0 is ready (${JSON.stringify(w.appUpdate?.version)})`);
+  log(w.dialogs.length === 1, `the app's own box asks (${w.dialogs.length})`);
+  w.autoUpdater.emit("update-downloaded", { version: "0.2.0" }); await tick();
+  w.autoUpdater.emit("update-downloaded", { version: "0.2.0" }); await tick();
+  log(w.dialogs.length === 1, `the same version again (later checks): no second box (${w.dialogs.length})`);
+  log(w.appUpdate?.version === "0.2.0", "the board still shows it");
+  w.autoUpdater.emit("update-downloaded", { version: "0.3.0" }); await tick();
+  log(w.dialogs.length === 2 && w.appUpdate?.version === "0.3.0", `a newer version asks once more and the board shows it (${w.dialogs.length}, ${w.appUpdate?.version})`);
+  log(w.quitAndInstall === 0, "nothing restarted yet (Later)");
+  w.appUpdate?.restart(); await tick();
+  log(w.quitAndInstall === 1, "the board's Restart now restarts into it");
 }
 {
   const w = world({ packaged: true, dialogAnswer: 0 });

@@ -159,6 +159,35 @@ console.log("AC1, AC2, AC3, AC4 with --demo");
   const now = await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].webContents.getURL());
   log(now.includes("again=1") && opened().length === before, `AC3 a link to the board itself stays in the window (${now})`);
 
+  // AC10 in the window (demo), and AC9: a version downloads while the app is open.
+  await page.goto(wins[0].url); await page.waitForLoadState("load");
+  await page.getByText("Your team has learned some new things").first().waitFor({ timeout: 10000 }).catch(() => {});
+  let t = await page.evaluate(() => document.body.innerText);
+  log(/learned some new things/.test(t) && /update the team/.test(t), "AC10 the demo shows the newer-team notice in the window");
+  log(!/A new version of Team Board is ready/.test(t), "AC9 no new-version notice before one has downloaded");
+  await app.evaluate(({ dialog }, where) => {
+    const u = process.mainModule.require(where).autoUpdater; // the same module main.cjs loaded
+    globalThis.__v33 = { boxes: [], installs: 0 };
+    dialog.showMessageBox = async (w, o) => { globalThis.__v33.boxes.push((o ?? w).message); return { response: 1 }; }; // Later
+    u.quitAndInstall = () => { globalThis.__v33.installs++; };
+    u.emit("update-downloaded", { version: "9.9.9" });
+    u.emit("update-downloaded", { version: "9.9.9" });
+  }, path.join(DESKTOP, "node_modules/electron-updater"));
+  await page.getByRole("button", { name: "Check now" }).click();
+  await page.getByText("A new version of Team Board is ready.").first().waitFor({ timeout: 10000 }).catch(() => {});
+  t = await page.evaluate(() => document.body.innerText);
+  log(/A new version of Team Board is ready\./.test(t), "AC9 the board shows \"A new version of Team Board is ready.\"");
+  const restartBtn = page.getByRole("button", { name: "Restart now" });
+  log(await restartBtn.count() === 1, "AC9 with a Restart now button");
+  let rec = await app.evaluate(() => globalThis.__v33);
+  log(rec.boxes.length === 1, `AC9 the app's own box asked once for 9.9.9 (${JSON.stringify(rec.boxes)})`);
+  await shoot(app, page, "news");
+  await restartBtn.click().catch(() => {});
+  await sleep(800);
+  rec = await app.evaluate(() => globalThis.__v33);
+  log(rec.installs === 1, `AC9 Restart now restarts into it (quitAndInstall called ${rec.installs})`);
+  log(opened().length === before, "AC9 nothing handed to the browser");
+
   // AC5: opening the app again.
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].minimize());
   await sleep(500);

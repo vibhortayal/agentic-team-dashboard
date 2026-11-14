@@ -1,10 +1,10 @@
 {
  "issue": 33,
- "rev": "e1999fc57f11466fc205a548f7f82ed280b07f3d",
+ "rev": "ec0e18c19b4f19470419e9720a0452e2b5176db7",
  "base": "d9f0fee",
- "verdict": "PASS",
- "round": 1,
- "spec": "docs/changes/33.md at 3f21c2d",
+ "verdict": "BLOCK",
+ "round": 2,
+ "spec": "docs/changes/33.md draft v2 at ec0e18c",
  "checks": [
   {
    "id": "AC1-local-only",
@@ -111,7 +111,7 @@
   {
    "id": "AC8-unchanged",
    "spec": "AC8 The one-file apps, the npx package and their tests are unchanged",
-   "command": "npm ci && npm run typecheck && npm test && npm run build && bash .github/team/run-checks.sh at base and head; npm pack --dry-run; git diff --name-only d9f0fee e1999fc",
+   "command": "npm ci && npm run typecheck && npm test && npm run build && bash .github/team/run-checks.sh at base and head; npm pack --dry-run; git diff --name-only d9f0fee ec0e18c",
    "result": "pass"
   },
   {
@@ -129,16 +129,93 @@
   {
    "id": "S4-scope",
    "spec": "§3/§4 scope",
-   "command": "git diff --name-only d9f0fee e1999fc",
+   "command": "git diff --name-only d9f0fee ec0e18c",
+   "result": "pass"
+  },
+  {
+   "id": "AC9-board-notice",
+   "spec": "AC9 the board shows \"A new version of Team Board is ready.\" with a Restart now button that restarts into it",
+   "command": "xvfb-run -a node verification/33/app.mjs; node verification/33/checks/ac4_ac6_main.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC9-once-per-version",
+   "spec": "AC9 The app asks with its own box only once per version",
+   "command": "node verification/33/checks/ac4_ac6_main.mjs; app.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC9-outside",
+   "spec": "AC9 Outside the Mac app nothing shows",
+   "command": "node verification/33/checks/ac9_ac10_board.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC10-behind-current",
+   "spec": "AC10 .team/VERSION behind agentic-team-oss main: says to tell Ella \"update the team\"",
+   "command": "node verification/33/checks/ac9_ac10_board.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC10-read-only",
+   "spec": "AC10 The board only reads",
+   "command": "node verification/33/checks/ac9_ac10_board.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC10-6-hours",
+   "spec": "AC10 asks GitHub at most every six hours per project (reads one after another)",
+   "command": "node verification/33/checks/ac9_ac10_board.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "F1-AC10-reads-together",
+   "spec": "AC10 It asks GitHub at most every six hours per project",
+   "command": "node verification/33/checks/f1_team_check_together.mjs",
+   "result": "fail"
+  },
+  {
+   "id": "AC10-quiet",
+   "spec": "AC10 stays quiet when the project has no team or GitHub doesn't answer",
+   "command": "node verification/33/checks/ac9_ac10_board.mjs",
+   "result": "pass"
+  },
+  {
+   "id": "AC10-demo",
+   "spec": "AC10 The demo shows the notice",
+   "command": "node verification/33/checks/ac9_ac10_board.mjs; app.mjs",
    "result": "pass"
   }
  ],
+ "findings": [
+  {
+   "id": "F1",
+   "row": "AC10 6 hours",
+   "clause": "AC10: It asks GitHub at most every six hours per project.",
+   "repro": "npm run build && node verification/33/checks/f1_team_check_together.mjs",
+   "expected": "2 (or 5) GET /api/updates at the same moment for one project: 1 .team/VERSION read and 1 agentic-team-oss compare read",
+   "actual": "2 reads: 2 VERSION + 2 compare; 5 reads: 5 + 5 (the 6-hour cache is set only after GitHub answers, so reads in flight each ask)"
+  }
+ ],
  "notes": [
-  "Release run 43532765073 ran at 4907efe; e1999fc changes only the Mac job's name (mac_app) and timeout (15 min). At 4907efe verification/10's sec7 check failed; at e1999fc all 38 checks pass.",
-  "The run had no Developer ID secrets and no version: Developer ID signing, notarization within 15 minutes, version stamping on the Mac and attaching to a draft release were not exercised. Stamping was run on Linux (Team-Board-0.2.0-x64.zip). The dmg itself is not signed by electron-builder's default; the app inside is.",
-  "The window loads http://localhost:<port>; the server listens on 127.0.0.1 only. A board link written with 127.0.0.1 opens in the browser.",
-  "After Later, a later 6-hourly check may ask again; a timer check overlapping a menu check can leave the menu check unanswered. No clause covers either.",
-  "Dark screenshots set the page's colour scheme directly (nativeTheme does not reach the page under xvfb); the app leaves themeSource at system.",
-  "Not tested (§9): a real signed update, a person opening the dmg. No Terminal window on a Mac follows from the .app bundle; the smoke test ran the binary directly."
- ]
+  "Regression: npm test 94 passed, typecheck and build ok, 39 of 40 verifier checks pass (F1 fails), app.mjs 64/64 on the rebuilt app.",
+  "The release workflow was not rerun after round 2; the Mac smoke test (run 43532765073) covers round 1's code.",
+  "A quiet failure is cached for six hours, hiding the team notice until the next check (allowed: stays quiet).",
+  "Round 1 note 2 (asking again after Later) is fixed by AC9's once per version.",
+  "Round 1 notes 1, 3, 4 and untested risk stand (README.md)."
+ ],
+ "previous": {
+  "round": 1,
+  "rev": "e1999fc57f11466fc205a548f7f82ed280b07f3d",
+  "verdict": "PASS",
+  "evidence": "e2b35e5",
+  "notes": [
+   "Release run 43532765073 ran at 4907efe; e1999fc changes only the Mac job's name (mac_app) and timeout (15 min). At 4907efe verification/10's sec7 check failed; at e1999fc all 38 checks pass.",
+   "The run had no Developer ID secrets and no version: Developer ID signing, notarization within 15 minutes, version stamping on the Mac and attaching to a draft release were not exercised. Stamping was run on Linux (Team-Board-0.2.0-x64.zip). The dmg itself is not signed by electron-builder's default; the app inside is.",
+   "The window loads http://localhost:<port>; the server listens on 127.0.0.1 only. A board link written with 127.0.0.1 opens in the browser.",
+   "After Later, a later 6-hourly check may ask again; a timer check overlapping a menu check can leave the menu check unanswered. No clause covers either.",
+   "Dark screenshots set the page's colour scheme directly (nativeTheme does not reach the page under xvfb); the app leaves themeSource at system.",
+   "Not tested (§9): a real signed update, a person opening the dmg. No Terminal window on a Mac follows from the .app bundle; the smoke test ran the binary directly."
+  ]
+ }
 }

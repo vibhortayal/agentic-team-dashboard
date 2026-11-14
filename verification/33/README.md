@@ -1,4 +1,67 @@
-# Verification of #33, round 1: PASS
+# Verification of #33
+
+## Round 2: BLOCK (F1)
+
+Reviewed revision ec0e18c19b4f19470419e9720a0452e2b5176db7. Spec `docs/changes/33.md` draft v2 at ec0e18c (adds AC9, AC10).
+I wrote the round 2 rows into `checks.md` and committed them (6d98c82) before reading the new code. Then I read only the
+GitHub addresses that `server/updates.ts` asks for.
+
+### F1: two reads at the same moment ask GitHub twice (AC10)
+
+- **Clause (AC10):** "It asks GitHub at most every six hours per project."
+- **Repro:** `npm run build && node verification/33/checks/f1_team_check_together.mjs`. It starts the board for a project
+  whose `.team/VERSION` is behind, then sends two `GET /api/updates` requests together. This is what two board tabs opened
+  at once do: each page loads `/api/updates` when it opens.
+- **Expected:** one `.team/VERSION` read and one agentic-team-oss compare read, both answered from that single round.
+- **Actual:** with 2 reads, 2 VERSION reads and 2 compare reads. With 5 reads, 5 and 5. The six-hour cache is filled
+  only after GitHub answers, so every read that arrives before then asks GitHub itself. Reads that come one after
+  another are cached correctly.
+
+### What ran at ec0e18c
+
+| What | Result |
+|---|---|
+| `npm ci && npm run typecheck` | ok |
+| `npm test` | 94 passed (10 files) |
+| `npm run build` | ok |
+| `bash .github/team/run-checks.sh` | 40 run; only `verification/33/checks/f1_team_check_together.mjs` fails (F1) |
+| `checks/ac9_ac10_board.mjs` (new) | 27/27 ok (`checks-ac9_ac10_board.log`) |
+| `checks/ac4_ac6_main.mjs` | 31 ok (round 1's 23, plus 8 for AC9). Its fake built board now also has `setAppUpdate` (`checks-ac4_ac6_main.log`) |
+| `checks/ac7_ac8_files.mjs` | 28 ok |
+| `app.mjs` (real app, desktop rebuilt with `npm run board`) | 64 ok, 0 failed (`app.log`) |
+
+Passed in round 2:
+- **AC9:**
+  - After `update-downloaded` in the real app, a "Check now" brings up "A new version of Team Board is ready." with a
+    Restart now button. Pressing it calls `quitAndInstall`.
+  - The app's own box asks once per version: the same version again asks nothing; 0.3.0 asks once more.
+  - Outside the Mac app, `/api/updates` has no app notice. A restart request is refused (400) and the board keeps running.
+  - A restart request from another site's page is refused (403).
+- **AC10:**
+  - **Notice:** a VERSION behind main turns the notice on, with "update the team". VERSION at main's newest commit,
+    even with trailing spaces, gives no notice.
+  - **Read only:** every request is a GET.
+  - **Six-hour cache:** later reads are cached. At 6 h minus a minute nothing is asked again; at 6 h plus a minute,
+    one more round.
+  - **Per project:** another project is asked about separately.
+  - **Quiet cases:** no notice and no error, with the cards still showing, when:
+    - there is no VERSION file, or it names no commit
+    - agentic-team-oss doesn't have the commit
+    - either read answers 500, a rate limit, a reset connection or broken JSON
+  - **Demo:** the demo shows the notice without using the network.
+- **Screenshots:** `news-*` shows both notices, at 420 and 1280 px, light and dark, with no sideways scroll.
+
+Round 1's note 2 (asking again after Later) is fixed by AC9's once per version.
+
+Notes (round 2):
+- The release workflow was not rerun after round 2. `desktop/app/main.cjs` and the server changed, so the Mac smoke test
+  covers round 1's code, not this revision.
+- Every quiet failure is cached for six hours too, so one GitHub hiccup hides the team notice until the next check.
+  The spec allows this ("stays quiet").
+- The one-file app shows the team notice too, because it is the same board. AC10 says "the board", so this is expected;
+  AC8 says the one-file app is unchanged, but its existing tests are unchanged and pass.
+
+## Round 1: PASS (at e1999fc)
 
 Reviewed revision e1999fc57f11466fc205a548f7f82ed280b07f3d (the build at 4907efe plus the coordinator's release.yml fix:
 job renamed `mac_app`, 15-minute timeout). Base d9f0fee. Spec `docs/changes/33.md` at 3f21c2d. Rows: `checks.md`,
