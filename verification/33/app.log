@@ -56,13 +56,13 @@ AC1, AC2, AC3, AC4 with --demo
   ok   news wide dark: no sideways scroll
   ok   AC9 Restart now restarts into it (quitAndInstall called 1)
   ok   AC9 nothing handed to the browser
-  ok   AC5 the second copy ends by itself (0, 171 ms)
+  ok   AC5 the second copy ends by itself (0, 197 ms)
   ok   AC5 still one board (1 listening)
   ok   AC5 the open window comes forward {"n":1,"min":false,"vis":true}
   ok   AC1 closing the window quits the app
   ok   AC1 the board is stopped
 AC2 without --demo (sign-in and the project picker)
-  ok   AC2 with no project chosen the app answers as the one-file app ({"repo":"","repo_url":"","updated":"2026-11-14T00:38:04Z","error":"Pick which project to show.","needed":[],"handled":[],"columns":[{"key":"getting-ready","titl)
+  ok   AC2 with no project chosen the app answers as the one-file app ({"repo":"","repo_url":"","updated":"2026-11-14T00:43:31Z","error":"Pick which project to show.","needed":[],"handled":[],"columns":[{"key":"getting-ready","titl)
        page: "Your project board\n\nWelcome\nFinding your project…\n\nYour GitHub sign-in didn't work. Ask Ella to help you sign in again.\n\nTry again\nThe board runs on your computer. It changes your project only when you save a setting."
   ok   AC2 the window shows the start page (sign-in / project picker)
   ok   start narrow light: no sideways scroll

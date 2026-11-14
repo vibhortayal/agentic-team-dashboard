@@ -1,6 +1,31 @@
 # Verification of #33
 
-## Round 2: BLOCK (F1)
+## Round 3: PASS
+
+Reviewed revision daa74d88edaab41d77eb0c9cc7a5e7a0fc13612e. Spec `docs/changes/33.md` draft v2 (unchanged since ec0e18c).
+The diff since round 2 touches only `server/updates.ts` and `server/updates.test.ts`: `TeamCheck` now caches the
+question while GitHub is still answering it, and a failed question gives null. `verification/` is unchanged since my
+round 2 commit (e974e1f).
+
+The F1 repro ran first and now passes: `checks/f1_team_check_together.mjs`, 4/4. With 2 and with 5 reads at the same
+moment, GitHub got 1 VERSION read and 1 main read, and every page showed the notice (`checks-f1.log`).
+
+Full regression at daa74d8:
+
+| What | Result |
+|---|---|
+| `npm ci`, `npm run typecheck`, `npm run build` | ok |
+| `npm test` | 95 passed (10 files; 1 new) |
+| `bash .github/team/run-checks.sh` | 40 run, all ok |
+| `checks/ac9_ac10_board.mjs` | 27/27 (the six-hour and GitHub-down rows cover the changed cache) |
+| `checks/ac4_ac6_main.mjs` | 31 ok |
+| `checks/ac7_ac8_files.mjs` | 28 ok |
+| `app.mjs` (desktop rebuilt) | 64 ok, 0 failed |
+
+I added no new rows: the change is covered by the existing ones. The round 2 notes and round 1's untested risk still
+stand, including that the release workflow was last run on round 1's code.
+
+## Round 2: BLOCK (F1, fixed in round 3)
 
 Reviewed revision ec0e18c19b4f19470419e9720a0452e2b5176db7. Spec `docs/changes/33.md` draft v2 at ec0e18c (adds AC9, AC10).
 I wrote the round 2 rows into `checks.md` and committed them (6d98c82) before reading the new code. Then I read only the

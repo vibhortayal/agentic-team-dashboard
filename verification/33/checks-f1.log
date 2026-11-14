@@ -1,5 +1,5 @@
-  FAIL 2 reads at the same moment ask GitHub once (got 2 VERSION reads and 2 main reads)
+  ok   2 reads at the same moment ask GitHub once (got 1 VERSION reads and 1 main reads)
   ok   2 reads: each shows the team notice
-  FAIL 5 reads at the same moment ask GitHub once (got 5 VERSION reads and 5 main reads)
+  ok   5 reads at the same moment ask GitHub once (got 1 VERSION reads and 1 main reads)
   ok   5 reads: each shows the team notice
-F1 AC10 reads together: 2/4 passed
+F1 AC10 reads together: 4/4 passed

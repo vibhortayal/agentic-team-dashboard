@@ -1,10 +1,10 @@
 {
  "issue": 33,
- "rev": "ec0e18c19b4f19470419e9720a0452e2b5176db7",
+ "rev": "daa74d88edaab41d77eb0c9cc7a5e7a0fc13612e",
  "base": "d9f0fee",
- "verdict": "BLOCK",
- "round": 2,
- "spec": "docs/changes/33.md draft v2 at ec0e18c",
+ "verdict": "PASS",
+ "round": 3,
+ "spec": "docs/changes/33.md draft v2 (at daa74d8, unchanged since ec0e18c)",
  "checks": [
   {
    "id": "AC1-local-only",
@@ -111,7 +111,7 @@
   {
    "id": "AC8-unchanged",
    "spec": "AC8 The one-file apps, the npx package and their tests are unchanged",
-   "command": "npm ci && npm run typecheck && npm test && npm run build && bash .github/team/run-checks.sh at base and head; npm pack --dry-run; git diff --name-only d9f0fee ec0e18c",
+   "command": "npm ci && npm run typecheck && npm test && npm run build && bash .github/team/run-checks.sh at base and head; npm pack --dry-run; git diff --name-only d9f0fee daa74d8",
    "result": "pass"
   },
   {
@@ -129,7 +129,7 @@
   {
    "id": "S4-scope",
    "spec": "§3/§4 scope",
-   "command": "git diff --name-only d9f0fee ec0e18c",
+   "command": "git diff --name-only d9f0fee daa74d8",
    "result": "pass"
   },
   {
@@ -172,7 +172,7 @@
    "id": "F1-AC10-reads-together",
    "spec": "AC10 It asks GitHub at most every six hours per project",
    "command": "node verification/33/checks/f1_team_check_together.mjs",
-   "result": "fail"
+   "result": "pass"
   },
   {
    "id": "AC10-quiet",
@@ -187,35 +187,43 @@
    "result": "pass"
   }
  ],
- "findings": [
-  {
-   "id": "F1",
-   "row": "AC10 6 hours",
-   "clause": "AC10: It asks GitHub at most every six hours per project.",
-   "repro": "npm run build && node verification/33/checks/f1_team_check_together.mjs",
-   "expected": "2 (or 5) GET /api/updates at the same moment for one project: 1 .team/VERSION read and 1 agentic-team-oss compare read",
-   "actual": "2 reads: 2 VERSION + 2 compare; 5 reads: 5 + 5 (the 6-hour cache is set only after GitHub answers, so reads in flight each ask)"
-  }
- ],
  "notes": [
-  "Regression: npm test 94 passed, typecheck and build ok, 39 of 40 verifier checks pass (F1 fails), app.mjs 64/64 on the rebuilt app.",
-  "The release workflow was not rerun after round 2; the Mac smoke test (run 43532765073) covers round 1's code.",
+  "Round 3: F1 repro first (4/4), then full regression: npm test 95 passed, typecheck and build ok, 40/40 verifier checks, app.mjs 64/64 on the rebuilt app.",
+  "The diff since round 2 is server/updates.ts (TeamCheck caches the pending question) and one unit test; covered by existing rows, none added.",
+  "The release workflow was last run (43532765073) on round 1's code; the Mac build and smoke test have not run on this revision.",
   "A quiet failure is cached for six hours, hiding the team notice until the next check (allowed: stays quiet).",
-  "Round 1 note 2 (asking again after Later) is fixed by AC9's once per version.",
-  "Round 1 notes 1, 3, 4 and untested risk stand (README.md)."
+  "The window loads http://localhost:<port> while the server listens on 127.0.0.1 only; a board link written with 127.0.0.1 opens in the browser.",
+  "A 6-hourly check that starts while a menu check is waiting can leave the menu check unanswered.",
+  "Not tested: a real signed update and a person opening the dmg (§9); the Developer ID signing and notarization path, notarization inside 15 minutes; setting the version and attaching to a draft release on the Mac; the dmg file itself is not signed by default."
  ],
  "previous": {
-  "round": 1,
-  "rev": "e1999fc57f11466fc205a548f7f82ed280b07f3d",
-  "verdict": "PASS",
-  "evidence": "e2b35e5",
-  "notes": [
-   "Release run 43532765073 ran at 4907efe; e1999fc changes only the Mac job's name (mac_app) and timeout (15 min). At 4907efe verification/10's sec7 check failed; at e1999fc all 38 checks pass.",
-   "The run had no Developer ID secrets and no version: Developer ID signing, notarization within 15 minutes, version stamping on the Mac and attaching to a draft release were not exercised. Stamping was run on Linux (Team-Board-0.2.0-x64.zip). The dmg itself is not signed by electron-builder's default; the app inside is.",
-   "The window loads http://localhost:<port>; the server listens on 127.0.0.1 only. A board link written with 127.0.0.1 opens in the browser.",
-   "After Later, a later 6-hourly check may ask again; a timer check overlapping a menu check can leave the menu check unanswered. No clause covers either.",
-   "Dark screenshots set the page's colour scheme directly (nativeTheme does not reach the page under xvfb); the app leaves themeSource at system.",
-   "Not tested (§9): a real signed update, a person opening the dmg. No Terminal window on a Mac follows from the .app bundle; the smoke test ran the binary directly."
-  ]
+  "round": 2,
+  "rev": "ec0e18c19b4f19470419e9720a0452e2b5176db7",
+  "verdict": "BLOCK",
+  "findings": [
+   {
+    "id": "F1",
+    "row": "AC10 6 hours",
+    "clause": "AC10: It asks GitHub at most every six hours per project.",
+    "repro": "npm run build && node verification/33/checks/f1_team_check_together.mjs",
+    "expected": "2 (or 5) GET /api/updates at the same moment for one project: 1 .team/VERSION read and 1 agentic-team-oss compare read",
+    "actual": "2 reads: 2 VERSION + 2 compare; 5 reads: 5 + 5 (the 6-hour cache is set only after GitHub answers, so reads in flight each ask)"
+   }
+  ],
+  "evidence": "e974e1f",
+  "previous": {
+   "round": 1,
+   "rev": "e1999fc57f11466fc205a548f7f82ed280b07f3d",
+   "verdict": "PASS",
+   "evidence": "e2b35e5",
+   "notes": [
+    "Release run 43532765073 ran at 4907efe; e1999fc changes only the Mac job's name (mac_app) and timeout (15 min). At 4907efe verification/10's sec7 check failed; at e1999fc all 38 checks pass.",
+    "The run had no Developer ID secrets and no version: Developer ID signing, notarization within 15 minutes, version stamping on the Mac and attaching to a draft release were not exercised. Stamping was run on Linux (Team-Board-0.2.0-x64.zip). The dmg itself is not signed by electron-builder's default; the app inside is.",
+    "The window loads http://localhost:<port>; the server listens on 127.0.0.1 only. A board link written with 127.0.0.1 opens in the browser.",
+    "After Later, a later 6-hourly check may ask again; a timer check overlapping a menu check can leave the menu check unanswered. No clause covers either.",
+    "Dark screenshots set the page's colour scheme directly (nativeTheme does not reach the page under xvfb); the app leaves themeSource at system.",
+    "Not tested (§9): a real signed update, a person opening the dmg. No Terminal window on a Mac follows from the .app bundle; the smoke test ran the binary directly."
+   ]
+  }
  }
 }
