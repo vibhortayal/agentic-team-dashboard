@@ -1,12 +1,14 @@
 # Team gates: copy to .github/workflows/team-gates.yml. A gate file, owned by the owner.
 #
-# Two jobs, split on purpose:
+# Two workflows, split on purpose (team-checks.yml is the other one):
 #   team-gates   runs on pull_request_target, so the workflow AND the gate script come
 #                from the base branch. It never runs code from the pull request; it only
 #                reads the PR's commits with git. A PR cannot change what judges it.
-#   team-checks  runs the PR's own code (Verifier checks, lint) on pull_request, with a
+#   team-checks  (team-checks.yml) runs the PR's own code (Verifier checks, lint) on pull_request, with a
 #                read-only token and no secrets. If a PR edits this job, team-gates fails
 #                it for touching .github/ without the owner's label.
+# They are separate files so each PR event starts only the workflow it needs, and a run of
+# one never posts a "skipped" result over the other's check.
 # Make both jobs required status checks in the branch ruleset on main.
 # A review doesn't re-run team-gates, so the Verifier adds the `verified` label to the PR
 # right after approving; the labeled event re-runs the verdict check against her approval.
@@ -21,18 +23,15 @@ name: team-gates
 on:
   pull_request_target:
     types: [opened, synchronize, reopened, labeled, unlabeled, edited, ready_for_review]
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
 
 # Private repos have a monthly Actions allowance: a newer event on the same PR cancels
 # the older run, and no job runs longer than 10 minutes.
 concurrency:
-  group: team-gates-${{ github.event_name }}-${{ github.event.pull_request.number }}
+  group: team-gates-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
   team-gates:
-    if: github.event_name == 'pull_request_target'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -79,45 +78,3 @@ jobs:
       - name: Verifier PASS for this head (tickets)
         if: env.DRAFT != 'true'
         run: python3 .github/team/team_gates.py verdict --base "$BASE" --head "$HEAD" --branch "$BRANCH"
-
-  team-checks:
-    if: github.event_name == 'pull_request' && !github.event.pull_request.draft
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-    env:
-      BASE: ${{ github.event.pull_request.base.sha }}
-      HEAD: ${{ github.event.pull_request.head.sha }}
-      BRANCH: ${{ github.event.pull_request.head.ref }}
-      LINT_CMD: ${{ vars.LINT_CMD }}
-      SETUP_CMD: ${{ vars.SETUP_CMD }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Take the gate scripts from base
-        run: |
-          mkdir -p "$RUNNER_TEMP/gates"
-          # The first PR, which installs this kit, has no kit on base to run. Only a gate/
-          # branch may pass that way; the owner reviews it by hand.
-          if ! git cat-file -e "$BASE:.github/team/team_gates.py" 2>/dev/null; then
-            case "$BRANCH" in
-              gate/*) echo "::notice::The kit isn't on the base branch yet: this is the install PR, so the owner reviews it by hand."
-                      echo "TEAM_BOOTSTRAP=1" >> "$GITHUB_ENV"; exit 0 ;;
-              *) echo "::error::The gate kit isn't on the base branch. Install it with a gate/ PR first."; exit 1 ;;
-            esac
-          fi
-          git show "$BASE:.github/team/team_gates.py" > "$RUNNER_TEMP/gates/team_gates.py"
-          git show "$BASE:.github/team/run-checks.sh" > "$RUNNER_TEMP/gates/run-checks.sh"
-      - name: Project setup
-        if: ${{ vars.SETUP_CMD != '' && env.TEAM_BOOTSTRAP != '1' }}
-        run: bash -c "$SETUP_CMD"
-      - name: Verifier checks
-        if: ${{ env.TEAM_BOOTSTRAP != '1' }}
-        run: bash "$RUNNER_TEMP/gates/run-checks.sh"
-      - name: Quality gate (block new violations only)
-        if: ${{ env.TEAM_BOOTSTRAP != '1' }}
-        run: python3 "$RUNNER_TEMP/gates/team_gates.py" quality --base "$BASE" --head "$HEAD"
