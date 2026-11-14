@@ -10,6 +10,8 @@
 # Make both jobs required status checks in the branch ruleset on main.
 # A review doesn't re-run team-gates, so the Verifier adds the `verified` label to the PR
 # right after approving; the labeled event re-runs the verdict check against her approval.
+# While a PR is a draft the team is still working on it and it can't merge, so only the
+# approval reset runs; every check runs once it is marked ready, and on each change after.
 #
 # Repository variables: TEAM_OWNER (owner's GitHub login), TEAM_CHECKER (the Verifier's
 # GitHub identity; leave empty only for the prototype profile), LINT_CMD (prints
@@ -18,9 +20,9 @@ name: team-gates
 
 on:
   pull_request_target:
-    types: [opened, synchronize, reopened, labeled, unlabeled, edited]
+    types: [opened, synchronize, reopened, labeled, unlabeled, edited, ready_for_review]
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, ready_for_review]
 
 # Private repos have a monthly Actions allowance: a newer event on the same PR cancels
 # the older run, and no job runs longer than 10 minutes.
@@ -43,6 +45,7 @@ jobs:
       BRANCH: ${{ github.event.pull_request.head.ref }}
       PR_BODY: ${{ github.event.pull_request.body }}   # read by the script for a "Team branch:" line; never run
       PR_NUMBER: ${{ github.event.pull_request.number }}
+      DRAFT: ${{ github.event.pull_request.draft }}
       TEAM_OWNER: ${{ vars.TEAM_OWNER }}
       TEAM_CHECKER: ${{ vars.TEAM_CHECKER }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -59,19 +62,26 @@ jobs:
       - name: Remove approvals after a new push
         if: github.event.action == 'synchronize'
         run: python3 .github/team/team_gates.py strip-approvals
+      - name: Draft (checks wait until the PR is marked ready)
+        if: env.DRAFT == 'true'
+        run: echo "::notice::Draft pull request. Approvals were reset if needed, and the checks run when it is marked ready."
       - name: Branch class
+        if: env.DRAFT != 'true'
         run: python3 .github/team/team_gates.py classify --branch "$BRANCH"
       - name: Tamper guard (zones, tests, evidence, class paths)
+        if: env.DRAFT != 'true'
         run: python3 .github/team/team_gates.py tamper --base "$BASE" --head "$HEAD" --branch "$BRANCH"
       - name: Docs budget (lean documentation)
+        if: env.DRAFT != 'true'
         env:
           DOCS_BUDGET: ${{ vars.DOCS_BUDGET }}
         run: python3 .github/team/team_gates.py docs --base "$BASE" --head "$HEAD"
       - name: Verifier PASS for this head (tickets)
+        if: env.DRAFT != 'true'
         run: python3 .github/team/team_gates.py verdict --base "$BASE" --head "$HEAD" --branch "$BRANCH"
 
   team-checks:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && !github.event.pull_request.draft
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
