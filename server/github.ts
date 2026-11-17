@@ -1,7 +1,7 @@
 // Read the project's issues, pull requests and team comments from GitHub.
 //
-// Sign-in comes from GITHUB_TOKEN or GH_TOKEN, or from the GitHub command-line tool if it is
-// installed and signed in. The board writes only one thing: a setting the person saves on the
+// Sign-in comes from GITHUB_TOKEN or GH_TOKEN, or from the GitHub command-line tool that Ella
+// signed in during setup, so the person never signs in to the board separately. The board writes only one thing: a setting the person saves on the
 // Settings page (settings.ts), through `send` below.
 
 import { execFileSync } from "node:child_process";
@@ -26,12 +26,30 @@ export function findToken(env: NodeJS.ProcessEnv = process.env): string | null {
     const v = env[name]?.trim();
     if (v) return v;
   }
-  try {
-    const out = execFileSync("gh", ["auth", "token"], { encoding: "utf8", timeout: 10_000, stdio: ["ignore", "pipe", "ignore"] });
-    return out.trim() || null;
-  } catch {
-    return null;
+  // Ella signs in with the GitHub command-line tool during setup, so the board reuses that sign-in
+  // and the person never signs in twice. An app opened from the Dock or Start menu may not get the
+  // same search path as a terminal, so look where the installers put it too.
+  for (const gh of ghCandidates(env)) {
+    try {
+      const out = execFileSync(gh, ["auth", "token"], { encoding: "utf8", timeout: 10_000, stdio: ["ignore", "pipe", "ignore"] });
+      if (out.trim()) return out.trim();
+    } catch {
+      // not installed here, or not signed in: try the next place
+    }
   }
+  return null;
+}
+
+/** Where the GitHub command-line tool may be: on the search path first, then where its installers put it. */
+export function ghCandidates(env: NodeJS.ProcessEnv = process.env, platform: NodeJS.Platform = process.platform): string[] {
+  const found = ["gh"];
+  if (platform === "darwin") found.push("/opt/homebrew/bin/gh", "/usr/local/bin/gh");
+  else if (platform === "win32") {
+    for (const base of [env.ProgramFiles, env["ProgramFiles(x86)"], env.LOCALAPPDATA && `${env.LOCALAPPDATA}\\Programs`]) {
+      if (base) found.push(`${base}\\GitHub CLI\\gh.exe`);
+    }
+  } else found.push("/usr/bin/gh", "/usr/local/bin/gh", "/home/linuxbrew/.linuxbrew/bin/gh");
+  return found;
 }
 
 /** owner/name from the folder's git remote, if it points at GitHub. */
