@@ -20,7 +20,7 @@ A small window opens (Terminal on a Mac, a black window on Windows) and the boar
 
 **Or type one command** (needs Node 22.18 or newer): `npx team-board`. Add `--demo` to see sample data. (This works once the package is published to npm.)
 
-The first time, click "Sign in with GitHub", copy the code it shows into GitHub, then pick your project. The board changes nothing unless you save a setting. If you already signed in to GitHub's command-line tool during setup, the board uses that sign-in instead.
+Ella connects the board when she sets up your project, so it opens straight onto your project. If it ever asks, tell Ella "Connect the progress board to my project". The board changes nothing unless you save a setting.
 
 ## What you'll see
 
@@ -38,6 +38,6 @@ How the team works here is in `AGENTS.md` and `TEAM.md`. From this folder: `npm 
 
 Options: `--demo` (sample data, saves nothing), `--repo owner/name` (show this project instead of the saved one), `--port <n>` (default 4321; the next nine are tried if it's busy), `--no-open` (don't open the browser). The board only listens on this computer.
 
-Sign-in, in this order: the board's own saved sign-in, then `GITHUB_TOKEN` or `GH_TOKEN`, then the GitHub command-line tool's sign-in. The saved sign-in and chosen project live in `~/.config/team-board/config.json` on Mac and Linux, or `%APPDATA%\team-board\config.json` on Windows (`BOARD_CONFIG_DIR` moves it). `BOARD_GITHUB_CLIENT_ID=none` turns "Sign in with GitHub" off; `BOARD_GITHUB_CLIENT_ID` and `BOARD_GITHUB_APP_SLUG` point it at another GitHub App. `BOARD_GITHUB_API` and `BOARD_GITHUB_WEB` are for tests and only accept an address on this computer.
+Sign-in, in this order: the board's own saved sign-in, then `GITHUB_TOKEN` or `GH_TOKEN`, then the GitHub command-line tool's sign-in (the one Ella makes during setup; the board also looks in the usual install folders, since an app opened from the Dock or Start menu may not see the terminal's path). Signing the board in by hand is the fallback, under "Or connect it yourself". The saved sign-in and chosen project live in `~/.config/team-board/config.json` on Mac and Linux, or `%APPDATA%\team-board\config.json` on Windows (`BOARD_CONFIG_DIR` moves it). `BOARD_GITHUB_CLIENT_ID=none` turns that fallback off; `BOARD_GITHUB_CLIENT_ID` and `BOARD_GITHUB_APP_SLUG` point it at another GitHub App. `BOARD_GITHUB_API` and `BOARD_GITHUB_WEB` are for tests and only accept an address on this computer.
 
 What the board reads from GitHub is the contract in `.team/docs/github-state.md`, "What a person sees".

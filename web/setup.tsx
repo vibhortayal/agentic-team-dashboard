@@ -1,4 +1,4 @@
-// The two first-run screens: sign in with GitHub, then pick which project to show.
+// The two first-run screens: connect to the project (Ella usually already has), then pick which project to show.
 import { useEffect, useState } from "react";
 
 export interface Status {
@@ -46,32 +46,31 @@ export function SignIn({ status, onDone }: { status: Status; onDone: () => void 
     }
   }
 
-  if (!status.can_sign_in) {
-    return (
-      <section className="setup">
-        <h2>Sign in to GitHub first</h2>
-        <p>Your project lives on GitHub, so the board needs your OK to read it. This copy of the board can't sign in by itself yet.</p>
-        <p>Ask Ella in the Claude app: "Sign me in to GitHub for the progress board." Then press Check again.</p>
-        <button type="button" onClick={onDone}>Check again</button>
-      </section>
-    );
-  }
-
+  // Ella signs in for the person during setup and the board reuses it, so this screen should be rare.
+  // Asking Ella comes first; signing the board in by hand stays as a fallback.
   return (
     <section className="setup">
-      <h2>Sign in with GitHub</h2>
-      <p>Your project lives on GitHub. The board reads how it's going. It changes something only when you save a key or setting, and nobody can read a saved key back, not even the board.</p>
-      {!code && <button type="button" className="primary" onClick={() => void start()}>Sign in with GitHub</button>}
-      {code && (
-        <ol className="steps">
-          <li>
-            Copy this code:
-            <span className="code">{code.user_code}</span>
-            <button type="button" onClick={() => { void navigator.clipboard?.writeText(code.user_code); setCopied(true); }}>{copied ? "Copied" : "Copy"}</button>
-          </li>
-          <li><a href={safe(code.verification_uri)} target="_blank" rel="noopener" className="primary">Open GitHub</a> and paste it there.</li>
-          <li>Press <b>Authorize</b> on GitHub. This page moves on by itself.</li>
-        </ol>
+      <h2>Connect the board to your project</h2>
+      <p>Ella connects the board for you when she sets up your project, so you shouldn't need to do anything here.</p>
+      <p>Ask Ella in the Claude app: "Connect the progress board to my project." When she says it's done, press Check again.</p>
+      <button type="button" className="primary" onClick={onDone}>Check again</button>
+      {status.can_sign_in && (
+        <details className="all">
+          <summary>Or connect it yourself</summary>
+          <p className="help">Your project's online copy is kept on GitHub. The board only reads how it's going, and changes something only when you save a key or setting.</p>
+          {!code && <button type="button" onClick={() => void start()}>Connect it myself</button>}
+          {code && (
+            <ol className="steps">
+              <li>
+                Copy this code:
+                <span className="code">{code.user_code}</span>
+                <button type="button" onClick={() => { void navigator.clipboard?.writeText(code.user_code); setCopied(true); }}>{copied ? "Copied" : "Copy"}</button>
+              </li>
+              <li><a href={safe(code.verification_uri)} target="_blank" rel="noopener" className="primary">Open the sign-in page</a> and paste it there.</li>
+              <li>Press <b>Authorize</b>. This page moves on by itself.</li>
+            </ol>
+          )}
+        </details>
       )}
       {problem && <p className="problem-line">{problem}</p>}
     </section>
@@ -96,7 +95,7 @@ export function PickProject({ status, first, onDone }: { status: Status; first: 
     setProblem("");
     fetch("/api/projects").then(async (r) => {
       const d = (await r.json()) as { projects?: Project[]; error?: string };
-      if (!d.projects) { setProblem(d.error ?? "GitHub didn't answer. Try again."); return; }
+      if (!d.projects) { setProblem(d.error ?? "Your project's online copy didn't answer. Try again."); return; }
       const team = d.projects.filter((p) => p.team);
       if (first && team.length === 1) { void choose(team[0].repo); return; }
       setProjects(d.projects);
@@ -150,13 +149,13 @@ export function PickProject({ status, first, onDone }: { status: Status; first: 
             <li>When Ella says your project is ready, come back and press <b>Check again</b>.</li>
           </ol>
           <button type="button" className="primary" onClick={() => setRound(round + 1)}>Check again</button>
-          {status.install_url && (
-            <p>Ella already made it? <a href={safe(status.install_url)} target="_blank" rel="noopener">Let the board see it on GitHub</a>, then press Check again.</p>
+          {status.saved_sign_in && status.install_url && (
+            <p>Ella already made it? <a href={safe(status.install_url)} target="_blank" rel="noopener">Let the board see it</a>, then press Check again.</p>
           )}
         </>
       )}
-      {team.length > 0 && status.install_url && (
-        <p>Project missing? <a href={safe(status.install_url)} target="_blank" rel="noopener">Let the board see it on GitHub</a>, then come back here.</p>
+      {team.length > 0 && status.saved_sign_in && status.install_url && (
+        <p>Project missing? <a href={safe(status.install_url)} target="_blank" rel="noopener">Let the board see it</a>, then come back here.</p>
       )}
       <details className="all" open={all} onToggle={(e) => setAll((e.target as HTMLDetailsElement).open)}>
         <summary>Show all your projects{others.length ? ` (${others.length} more)` : ""}</summary>
